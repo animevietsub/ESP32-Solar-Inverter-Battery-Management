@@ -33,15 +33,15 @@ typedef struct _information_logger_t
     uint32_t globalBatteryESR;
     uint16_t globalBatteryHealth;
     int32_t globalDeviceFirmware;
-    int32_t globalDeviceUpTime;
+    uint32_t globalDeviceUpTime;
     uint16_t globalDeviceUtilization;
 } information_logger_t;
 
 typedef struct _inverter_logger_t
 {
-    int16_t globalBatteryVoltage;
-    int16_t globalBatteryIC;
-    int16_t globalBatteryIDC;
+    int32_t globalBatteryVoltage;
+    int32_t globalBatteryIC;
+    int32_t globalBatteryIDC;
     uint8_t globalInverterStatus;
 } inverter_logger_t;
 

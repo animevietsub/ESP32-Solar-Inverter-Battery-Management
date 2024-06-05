@@ -83,7 +83,7 @@ void ui_UpdateInformation()
     {
         lv_label_set_text(labelInformation, "Battery Information ");
         lv_label_set_text(labelInfo1, "Battery current ");
-        sprintf(stringData, "%+d.%d ", informationLogger->globalBatteryCurrent / 10, abs(informationLogger->globalBatteryCurrent % 10));
+        sprintf(stringData, "%+d.%d ", informationLogger->globalBatteryCurrent, 0);
         lv_label_set_text(valueInfo1, stringData);
         lv_label_set_text(unitInfo1, "A ");
         lv_label_set_text(labelInfo2, "Battery ESR ");
@@ -106,7 +106,7 @@ void ui_UpdateInformation()
         lv_label_set_text(valueInfo1, stringData);
         lv_label_set_text(unitInfo1, "Beta ");
         lv_label_set_text(labelInfo2, "Device up time ");
-        sprintf(stringData, "%d.%d ", informationLogger->globalDeviceUpTime / 10, informationLogger->globalDeviceUpTime % 10);
+        sprintf(stringData, "%d.%d ", informationLogger->globalDeviceUpTime / 3600, informationLogger->globalDeviceUpTime % 3600 / 360);
         lv_label_set_text(valueInfo2, stringData);
         lv_label_set_text(unitInfo2, "h ");
         lv_label_set_text(labelInfo3, "Device utilization ");

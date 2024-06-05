@@ -4,17 +4,19 @@
 #include <relay.h>
 
 SemaphoreHandle_t xGuiSemaphore;
-inverter_logger_t *inverterLogger;
+inverter_logger_t *_inverterLogger;
+information_logger_t *_informationLogger;
 
 static const char *TAG = "[MAIN]";
 
 void testTask(void *pvParameter)
 {
-    logger_GetInverterInformation(&inverterLogger);
+    logger_GetInverterInformation(&_inverterLogger);
+    logger_GetInformation(&_informationLogger);
     while (1)
     {
-        ui_UpdateBatteryPercent(esp_random() % 101);
-        ui_UpdateBatteryVoltage(inverterLogger->globalBatteryVoltage / 10);
+        ui_UpdateBatteryPercent(_informationLogger->globalEnergyLeft * 100 / 5000000);
+        ui_UpdateBatteryVoltage(_inverterLogger->globalBatteryVoltage / 10);
         ui_UpdateInformation();
         vTaskDelay(pdMS_TO_TICKS(1500));
     }

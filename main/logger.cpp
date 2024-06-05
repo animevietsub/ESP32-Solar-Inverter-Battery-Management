@@ -5,13 +5,13 @@ static SemaphoreHandle_t loggerSemaphore;
 static const char *TAG = "[LOGGER]";
 
 static information_logger_t informationLogger = {
-    .globalEnergyLeft = 3000000,
+    .globalEnergyLeft = 1000000,
     .globalTotalCharged = 0,
     .globalRemainingTime = 0,
     .globalBatteryCurrent = 0,
-    .globalBatteryESR = 0,
+    .globalBatteryESR = 50,
     .globalBatteryHealth = 0,
-    .globalDeviceFirmware = 0,
+    .globalDeviceFirmware = 10,
     .globalDeviceUpTime = 0,
     .globalDeviceUtilization = 0,
 };
@@ -36,18 +36,19 @@ void logger_GetInverterInformation(inverter_logger_t **inverterLogger_)
 void logger_UpdateInformation(void *pvParameter)
 {
     static int32_t EngeryExchange = 0;
-    while (1)
+    informationLogger.globalDeviceUtilization = (100 - lv_task_get_idle()) * 10;
+    informationLogger.globalBatteryCurrent = (inverterLogger.globalBatteryIC - inverterLogger.globalBatteryIDC);
+    EngeryExchange = ((inverterLogger.globalBatteryVoltage - (informationLogger.globalBatteryCurrent * informationLogger.globalBatteryESR / 10)) / 360) * (informationLogger.globalBatteryCurrent - 1);
+    informationLogger.globalEnergyLeft += EngeryExchange;
+    informationLogger.globalTotalCharged = EngeryExchange * 10; // Test
+    informationLogger.globalDeviceUpTime += 1;
+    if (EngeryExchange < 0)
     {
-        informationLogger.globalDeviceUtilization = (100 - lv_task_get_idle()) * 10;
-        EngeryExchange = ((inverterLogger.globalBatteryIC - inverterLogger.globalBatteryIDC) * inverterLogger.globalBatteryVoltage / 360);
-        informationLogger.globalEnergyLeft += EngeryExchange;
-        informationLogger.globalTotalCharged = EngeryExchange; // Test
-        informationLogger.globalBatteryCurrent = (inverterLogger.globalBatteryIC - inverterLogger.globalBatteryIDC) * 10;
-        if (EngeryExchange != 0)
-        {
-            informationLogger.globalRemainingTime = informationLogger.globalEnergyLeft / EngeryExchange;
-        }
-        vTaskDelay(pdMS_TO_TICKS(1000)); // check tick for more ac
+        informationLogger.globalRemainingTime = informationLogger.globalEnergyLeft / EngeryExchange;
+    }
+    if (inverterLogger.globalBatteryVoltage >= 5680 && informationLogger.globalBatteryCurrent == 0)
+    {
+        informationLogger.globalEnergyLeft = 5000000;
     }
 }
 
@@ -136,7 +137,12 @@ void logger_InitUART()
     xTaskCreate(response_Task, "[response_Task]", 4096, NULL, 0, NULL);
     xTaskCreate(logger_Task, "[logger_Task]", 4096, NULL, 0, NULL);
 
-    xTaskCreate(logger_UpdateInformation, "[logger_UpdateInformation]", 4096, NULL, 0, NULL);
+    const esp_timer_create_args_t periodic_timer_args = {
+        .callback = &logger_UpdateInformation,
+        .name = "[logger_UpdateInformation]"};
+    esp_timer_handle_t periodic_timer;
+    ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &periodic_timer));
+    ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, 1000 * 1000));
 }
 
 char *logger_InverterString(char *data)
