@@ -102,6 +102,14 @@ void response_Task(void *pvParameter)
             ESP_LOG_BUFFER_HEX("[responseData]", responseData, 200);
             uart_write_bytes(UART_NUM_2, (const char *)responseData, len);
             uart_wait_tx_idle_polling(UART_NUM_2);
+            if (*(responseData) == 0x28 && *(responseData + 109) == 0x0D)
+            {
+                inverterLogger.globalBatteryVoltage = (responseData[41] - 0x30) * 1000 + (responseData[42] - 0x30) * 100 + (responseData[44] - 0x30) * 10 + (responseData[45] - 0x30);
+                inverterLogger.globalBatteryIC = (responseData[47] - 0x30) * 100 + (responseData[48] - 0x30) * 10 + (responseData[49] - 0x30);
+                inverterLogger.globalBatteryIDC = (responseData[77] - 0x30) * 10000 + (responseData[78] - 0x30) * 1000 + (responseData[79] - 0x30) * 100 + (responseData[80] - 0x30) * 10 + (responseData[81] - 0x30);
+                *(responseData) = 0x00;
+                *(responseData + 109) = 0x00;
+            }
         }
         vTaskDelay(pdMS_TO_TICKS(50));
     }
