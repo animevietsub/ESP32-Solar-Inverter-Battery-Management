@@ -1,0 +1,43 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "E:/NEW_DATA/ESP32/ESP32_INVERTER_BATTERY/build/CMakeFiles/bootloader"
+		},
+		{
+			"file" : "E:/NEW_DATA/ESP32/ESP32_INVERTER_BATTERY/build/CMakeFiles/bootloader.rule"
+		},
+		{
+			"file" : "E:/NEW_DATA/ESP32/ESP32_INVERTER_BATTERY/build/CMakeFiles/bootloader-complete.rule"
+		},
+		{
+			"file" : "E:/NEW_DATA/ESP32/ESP32_INVERTER_BATTERY/build/bootloader-prefix/src/bootloader-stamp/bootloader-build.rule"
+		},
+		{
+			"file" : "E:/NEW_DATA/ESP32/ESP32_INVERTER_BATTERY/build/bootloader-prefix/src/bootloader-stamp/bootloader-configure.rule"
+		},
+		{
+			"file" : "E:/NEW_DATA/ESP32/ESP32_INVERTER_BATTERY/build/bootloader-prefix/src/bootloader-stamp/bootloader-download.rule"
+		},
+		{
+			"file" : "E:/NEW_DATA/ESP32/ESP32_INVERTER_BATTERY/build/bootloader-prefix/src/bootloader-stamp/bootloader-install.rule"
+		},
+		{
+			"file" : "E:/NEW_DATA/ESP32/ESP32_INVERTER_BATTERY/build/bootloader-prefix/src/bootloader-stamp/bootloader-mkdir.rule"
+		},
+		{
+			"file" : "E:/NEW_DATA/ESP32/ESP32_INVERTER_BATTERY/build/bootloader-prefix/src/bootloader-stamp/bootloader-patch.rule"
+		},
+		{
+			"file" : "E:/NEW_DATA/ESP32/ESP32_INVERTER_BATTERY/build/bootloader-prefix/src/bootloader-stamp/bootloader-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"bootloader"
+		],
+		"name" : "bootloader"
+	}
+}
