@@ -1,15 +1,17 @@
 #include <logger.h>
 
 static SemaphoreHandle_t loggerSemaphore;
+static int8_t loggerSkip = false;
 
 static const char *TAG = "[LOGGER]";
 
 static information_logger_t informationLogger = {
+    .globalPercent = 0,
     .globalEnergyLeft = 1000000,
     .globalTotalCharged = 0,
     .globalRemainingTime = 0,
     .globalBatteryCurrent = 0,
-    .globalBatteryESR = 50,
+    .globalBatteryESR = 500,
     .globalBatteryHealth = 0,
     .globalDeviceFirmware = 10,
     .globalDeviceUpTime = 0,
@@ -20,7 +22,8 @@ static inverter_logger_t inverterLogger = {
     .globalBatteryVoltage = 0,
     .globalBatteryIC = 0,
     .globalBatteryIDC = 0,
-    .globalInverterStatus = 0x00,
+    .globalPVPower = 0,
+    .globalOutputPower = 0,
 };
 
 void logger_GetInformation(information_logger_t **informationLogger_)
@@ -35,21 +38,61 @@ void logger_GetInverterInformation(inverter_logger_t **inverterLogger_)
 
 void logger_UpdateInformation(void *pvParameter)
 {
-    static int32_t EngeryExchange = 0;
+    static int32_t engeryExchange = 0;
+    static int32_t extraCurrent = 0;
+    static int32_t oldVoltage = 0;
+    static int32_t oldCurrent = 0;
     informationLogger.globalDeviceUtilization = (100 - lv_task_get_idle()) * 10;
     informationLogger.globalBatteryCurrent = (inverterLogger.globalBatteryIC - inverterLogger.globalBatteryIDC);
-    EngeryExchange = ((inverterLogger.globalBatteryVoltage - (informationLogger.globalBatteryCurrent * informationLogger.globalBatteryESR / 10)) / 360) * (informationLogger.globalBatteryCurrent - 1);
-    informationLogger.globalEnergyLeft += EngeryExchange;
-    informationLogger.globalTotalCharged = EngeryExchange * 10; // Test
-    informationLogger.globalDeviceUpTime += 1;
-    if (EngeryExchange < 0)
+    if (informationLogger.globalBatteryCurrent > 100 || informationLogger.globalBatteryCurrent < -100)
     {
-        informationLogger.globalRemainingTime = informationLogger.globalEnergyLeft / EngeryExchange;
+        return;
+    }
+    if (inverterLogger.globalBatteryVoltage > 5800 || inverterLogger.globalBatteryVoltage < 0)
+    {
+        return;
+    }
+    if (((inverterLogger.globalPVPower - inverterLogger.globalOutputPower) <= 100) && informationLogger.globalBatteryCurrent <= 0)
+    {
+        extraCurrent = -1l;
+    }
+    else
+    {
+        extraCurrent = 0l;
+    }
+    engeryExchange = (inverterLogger.globalBatteryVoltage - (informationLogger.globalBatteryCurrent * informationLogger.globalBatteryESR / 100l));
+    engeryExchange *= (informationLogger.globalBatteryCurrent + extraCurrent);
+    engeryExchange /= 360l;
+    informationLogger.globalEnergyLeft += engeryExchange;
+    informationLogger.globalTotalCharged = inverterLogger.globalPVPower * 10; // Test
+    informationLogger.globalDeviceUpTime += 1;
+    if (engeryExchange < 0)
+    {
+        informationLogger.globalRemainingTime = informationLogger.globalEnergyLeft / engeryExchange;
+    }
+    else if (engeryExchange > 0)
+    {
+        informationLogger.globalRemainingTime = (5000000l - informationLogger.globalEnergyLeft) / engeryExchange;
     }
     if (inverterLogger.globalBatteryVoltage >= 5680 && informationLogger.globalBatteryCurrent == 0)
     {
-        informationLogger.globalEnergyLeft = 5000000;
+        informationLogger.globalEnergyLeft = 5000000l;
     }
+    if (inverterLogger.globalBatteryVoltage == 5120 && informationLogger.globalBatteryCurrent == 0)
+    {
+        informationLogger.globalEnergyLeft = 1000000l;
+    }
+    informationLogger.globalPercent = informationLogger.globalEnergyLeft * 100 / 5000000l;
+
+    if (oldVoltage != 0 && oldCurrent != 0)
+    {
+        if (abs(oldVoltage - inverterLogger.globalBatteryVoltage) > 0050l)
+        {
+            informationLogger.globalBatteryESR = (informationLogger.globalBatteryESR * (SAMPLE_RATE_ESR - 1) + abs(oldVoltage - inverterLogger.globalBatteryVoltage) * 100 / abs(oldCurrent - informationLogger.globalBatteryCurrent)) / SAMPLE_RATE_ESR;
+        }
+    }
+    oldVoltage = inverterLogger.globalBatteryVoltage;
+    oldCurrent = informationLogger.globalBatteryCurrent;
 }
 
 void logger_Task(void *pvParameter)
@@ -57,15 +100,79 @@ void logger_Task(void *pvParameter)
     char *QPIGS = (char *)malloc(256);
     memset(QPIGS, 0, 256);
     memcpy(QPIGS, logger_InverterString("QPIGS"), strlen(logger_InverterString("QPIGS")) + 1);
-    vTaskDelay(pdMS_TO_TICKS(10000));
+
+    char *START_INVERTER_1 = (char *)malloc(256);
+    memset(START_INVERTER_1, 0, 256);
+    memcpy(START_INVERTER_1, logger_InverterString("PBCV48.0"), strlen(logger_InverterString("PBCV48.0")) + 1);
+    char *START_INVERTER_2 = (char *)malloc(256);
+    memset(START_INVERTER_2, 0, 256);
+    memcpy(START_INVERTER_2, logger_InverterString("PBDV49.0"), strlen(logger_InverterString("PBDV49.0")) + 1);
+
+    char *STOP_INVERTER_1 = (char *)malloc(256);
+    memset(STOP_INVERTER_1, 0, 256);
+    memcpy(STOP_INVERTER_1, logger_InverterString("PBCV51.0"), strlen(logger_InverterString("PBCV51.0")) + 1);
+    char *STOP_INVERTER_2 = (char *)malloc(256);
+    memset(STOP_INVERTER_2, 0, 256);
+    memcpy(STOP_INVERTER_2, logger_InverterString("PBDV56.0"), strlen(logger_InverterString("PBDV56.0")) + 1);
+
+    vTaskDelay(pdMS_TO_TICKS(15000));
     while (1)
     {
+        if (loggerSkip)
+        {
+            vTaskDelay(pdMS_TO_TICKS(10000));
+            loggerSkip = false;
+        }
         xSemaphoreTake(loggerSemaphore, portMAX_DELAY);
-        vTaskDelay(pdMS_TO_TICKS(10));
+        vTaskDelay(pdMS_TO_TICKS(100));
         uart_wait_tx_idle_polling(UART_NUM_1);
+        if (loggerSkip)
+        {
+            xSemaphoreGive(loggerSemaphore);
+            continue;
+        }
         uart_write_bytes(UART_NUM_1, QPIGS, strlen(QPIGS));
+        if ((informationLogger.globalPercent >= 25) && (inverterLogger.globalPVPower >= 200))
+        {
+            uart_wait_tx_idle_polling(UART_NUM_1);
+            if (loggerSkip)
+            {
+                xSemaphoreGive(loggerSemaphore);
+                continue;
+            }
+            vTaskDelay(pdMS_TO_TICKS(1000));
+            uart_write_bytes(UART_NUM_1, START_INVERTER_1, strlen(START_INVERTER_1));
+            uart_wait_tx_idle_polling(UART_NUM_1);
+            if (loggerSkip)
+            {
+                xSemaphoreGive(loggerSemaphore);
+                continue;
+            }
+            vTaskDelay(pdMS_TO_TICKS(1000));
+            uart_write_bytes(UART_NUM_1, START_INVERTER_2, strlen(START_INVERTER_2));
+        }
+        else if (informationLogger.globalPercent <= 20)
+        {
+            uart_wait_tx_idle_polling(UART_NUM_1);
+            if (loggerSkip)
+            {
+                xSemaphoreGive(loggerSemaphore);
+                continue;
+            }
+            vTaskDelay(pdMS_TO_TICKS(1000));
+            uart_write_bytes(UART_NUM_1, STOP_INVERTER_1, strlen(STOP_INVERTER_1));
+            uart_wait_tx_idle_polling(UART_NUM_1);
+            if (loggerSkip)
+            {
+                xSemaphoreGive(loggerSemaphore);
+                continue;
+            }
+            vTaskDelay(pdMS_TO_TICKS(1000));
+            uart_write_bytes(UART_NUM_1, STOP_INVERTER_2, strlen(STOP_INVERTER_2));
+        }
+        uart_wait_tx_idle_polling(UART_NUM_1);
         xSemaphoreGive(loggerSemaphore);
-        vTaskDelay(pdMS_TO_TICKS(5000));
+        vTaskDelay(pdMS_TO_TICKS(3000));
     }
 }
 
@@ -75,16 +182,17 @@ void request_Task(void *pvParameter)
     memset(requestData, 0, 256);
     while (1)
     {
-        int len = uart_read_bytes(UART_NUM_2, requestData, (256 - 1), pdMS_TO_TICKS(50));
+        int len = uart_read_bytes(UART_NUM_2, requestData, (256 - 1), pdMS_TO_TICKS(20));
         if (len == 0)
         {
-            vTaskDelay(pdMS_TO_TICKS(100));
+            vTaskDelay(pdMS_TO_TICKS(20));
             continue;
         }
-        ESP_LOG_BUFFER_HEX("[loggerData]", requestData, 30);
+        // ESP_LOG_BUFFER_HEX("[loggerData]", requestData, 30);
+        loggerSkip = true;
         xSemaphoreTake(loggerSemaphore, portMAX_DELAY);
-        vTaskDelay(pdMS_TO_TICKS(10));
         uart_wait_tx_idle_polling(UART_NUM_1);
+        vTaskDelay(pdMS_TO_TICKS(10));
         uart_write_bytes(UART_NUM_1, (const char *)requestData, len);
         xSemaphoreGive(loggerSemaphore);
     }
@@ -99,20 +207,27 @@ void response_Task(void *pvParameter)
         int len = uart_read_bytes(UART_NUM_1, responseData, (1024 - 1), pdMS_TO_TICKS(100));
         if (len > 0)
         {
-            ESP_LOGI("[responseData]", "len=%d", len);
-            ESP_LOG_BUFFER_HEX("[responseData]", responseData, 200);
-            uart_write_bytes(UART_NUM_2, (const char *)responseData, len);
-            uart_wait_tx_idle_polling(UART_NUM_2);
-            if (*(responseData) == 0x28 && *(responseData + 109) == 0x0D)
+            // ESP_LOGI("[responseData]", "len=%d", len);
+            // ESP_LOG_BUFFER_HEX("[responseData]", responseData, 200);
+            if (responseData[0] == 0x28 && responseData[109] == 0x0D && len == 110)
             {
                 inverterLogger.globalBatteryVoltage = (responseData[41] - 0x30) * 1000 + (responseData[42] - 0x30) * 100 + (responseData[44] - 0x30) * 10 + (responseData[45] - 0x30);
                 inverterLogger.globalBatteryIC = (responseData[47] - 0x30) * 100 + (responseData[48] - 0x30) * 10 + (responseData[49] - 0x30);
                 inverterLogger.globalBatteryIDC = (responseData[77] - 0x30) * 10000 + (responseData[78] - 0x30) * 1000 + (responseData[79] - 0x30) * 100 + (responseData[80] - 0x30) * 10 + (responseData[81] - 0x30);
-                *(responseData) = 0x00;
-                *(responseData + 109) = 0x00;
+                inverterLogger.globalPVPower = (responseData[98] - 0x30) * 10000 + (responseData[99] - 0x30) * 1000 + (responseData[100] - 0x30) * 100 + (responseData[101] - 0x30) * 10 + (responseData[102] - 0x30);
+                inverterLogger.globalOutputPower = (responseData[28] - 0x30) * 1000 + (responseData[29] - 0x30) * 100 + (responseData[30] - 0x30) * 10 + (responseData[31] - 0x30);
+                responseData[0] = 0x00;
+                responseData[109] = 0x00;
+                continue;
             }
+            if (responseData[0] == 0x28 && responseData[1] == 0x41 && responseData[2] == 0x43 && responseData[3] == 0x4B && responseData[4] == 0x39 && responseData[5] == 0x20 && responseData[6] == 0x0D)
+            {
+                continue;
+            }
+            uart_write_bytes(UART_NUM_2, (const char *)responseData, len);
+            uart_wait_tx_idle_polling(UART_NUM_2);
         }
-        vTaskDelay(pdMS_TO_TICKS(50));
+        vTaskDelay(pdMS_TO_TICKS(20));
     }
 }
 
@@ -142,7 +257,7 @@ void logger_InitUART()
         .name = "[logger_UpdateInformation]"};
     esp_timer_handle_t periodic_timer;
     ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &periodic_timer));
-    ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, 1000 * 1000));
+    ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, 1000000ull));
 }
 
 char *logger_InverterString(char *data)

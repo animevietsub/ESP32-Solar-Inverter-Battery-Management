@@ -838,7 +838,7 @@
     "LWIP_SNTP_MAX_SERVERS": 1,
     "LWIP_SNTP_UPDATE_DELAY": 3600000,
     "LWIP_SO_LINGER": false,
-    "LWIP_SO_RCVBUF": false,
+    "LWIP_SO_RCVBUF": true,
     "LWIP_SO_REUSE": true,
     "LWIP_SO_REUSE_RXTOALL": true,
     "LWIP_STATS": false,

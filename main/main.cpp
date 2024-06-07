@@ -15,10 +15,10 @@ void testTask(void *pvParameter)
     logger_GetInformation(&_informationLogger);
     while (1)
     {
-        ui_UpdateBatteryPercent(_informationLogger->globalEnergyLeft * 100 / 5000000);
+        ui_UpdateBatteryPercent(_informationLogger->globalPercent);
         ui_UpdateBatteryVoltage(_inverterLogger->globalBatteryVoltage / 10);
         ui_UpdateInformation();
-        vTaskDelay(pdMS_TO_TICKS(1500));
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
 

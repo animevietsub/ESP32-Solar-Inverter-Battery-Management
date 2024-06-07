@@ -12,6 +12,7 @@
 #include <esp_event.h>
 #include <esp_log.h>
 #include <esp_err.h>
+#include <esp_timer.h>
 
 #include <driver/gpio.h>
 #include <freertos/FreeRTOS.h>
@@ -24,14 +25,19 @@
 #include <lvgl/lvgl.h>
 #include <lvgl_helpers.h>
 
+#include <sdkconfig.h>
+
+#define SAMPLE_RATE_ESR 10
+
 typedef struct _information_logger_t
 {
+    int32_t globalPercent;
     int32_t globalEnergyLeft;
     int32_t globalTotalCharged;
     int32_t globalRemainingTime;
     int32_t globalBatteryCurrent;
-    uint32_t globalBatteryESR;
-    uint16_t globalBatteryHealth;
+    int32_t globalBatteryESR;
+    int32_t globalBatteryHealth;
     int32_t globalDeviceFirmware;
     uint32_t globalDeviceUpTime;
     uint16_t globalDeviceUtilization;
@@ -42,7 +48,9 @@ typedef struct _inverter_logger_t
     int32_t globalBatteryVoltage;
     int32_t globalBatteryIC;
     int32_t globalBatteryIDC;
-    uint8_t globalInverterStatus;
+    int32_t globalPVPower;
+    int32_t globalOutputPower;
+    uint8_t globalInverterMode;
 } inverter_logger_t;
 
 void logger_GetInformation(information_logger_t **informationLogger_);
