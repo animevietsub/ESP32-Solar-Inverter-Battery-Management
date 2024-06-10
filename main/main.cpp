@@ -2,6 +2,8 @@
 #include <ui.h>
 #include <logger.h>
 #include <relay.h>
+#include <gamo_wlan.h>
+#include <mqtt.h>
 
 SemaphoreHandle_t xGuiSemaphore;
 inverter_logger_t *_inverterLogger;
@@ -19,6 +21,37 @@ void testTask(void *pvParameter)
         ui_UpdateBatteryVoltage(_inverterLogger->globalBatteryVoltage / 10);
         ui_UpdateInformation();
         vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+}
+
+void mqttTask(void *pvParameter)
+{
+    char *data = (char *)malloc(256);
+    memset(data, 0, 256);
+    vTaskDelay(15000);
+    while (1)
+    {
+        sprintf(data, "%d", _informationLogger->globalPercent);
+        mqtt_Publish("ds/BATTERY LEVEL", data);
+        sprintf(data, "%d", _inverterLogger->globalPVPower);
+        mqtt_Publish("ds/PV POWER", data);
+        sprintf(data, "%.3f", (float)_informationLogger->globalEnergyLeft / 1000000);
+        mqtt_Publish("ds/ENERGY LEFT", data);
+        sprintf(data, "%+d:%02d:%02d ", _informationLogger->globalRemainingTime / 60 / 60, abs(_informationLogger->globalRemainingTime / 60 % 60), abs(_informationLogger->globalRemainingTime % 60));
+        mqtt_Publish("ds/REMAINING TIME", data);
+        sprintf(data, "%.1f", (float)_inverterLogger->globalBatteryVoltage / 100);
+        mqtt_Publish("ds/BATTERY VOLTAGE", data);
+        sprintf(data, "%d", _informationLogger->globalBatteryCurrent);
+        mqtt_Publish("ds/BATTERY CURRENT", data);
+        sprintf(data, "%d", 0);
+        mqtt_Publish("ds/GRID VOLTAGE", data);
+        sprintf(data, "%d", _inverterLogger->globalOutputPower);
+        mqtt_Publish("ds/OUTPUT POWER", data);
+        sprintf(data, "%d", (float)_informationLogger->globalTotalCharged / 1000000);
+        mqtt_Publish("ds/TOTAL GENERATED", data);
+        sprintf(data, "%d", 0);
+        mqtt_Publish("ds/TEMPERATURE", data);
+        vTaskDelay(pdMS_TO_TICKS(5000));
     }
 }
 
@@ -73,8 +106,12 @@ extern "C" void app_main()
     relay_Init();
     relay_On(); // Test only
     logger_InitUART();
-    printf("\r\nAPP %s is start!~\r\n", TAG);
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
-    xTaskCreatePinnedToCore(guiTask, "[guiTask]", 4096 * 2, NULL, 0, NULL, 1);
-    xTaskCreate(testTask, "[testTask]", 4096, NULL, 0, NULL);
+    gamo_wifi_init_sta();
+    mqtt_Init();
+    gamo_wifi_connect("TheKey_2", "", mqtt_Start);
+    // printf("\r\nAPP %s is start!~\r\n", TAG);
+    // vTaskDelay(1000 / portTICK_PERIOD_MS);
+    // xTaskCreatePinnedToCore(guiTask, "[guiTask]", 4096 * 2, NULL, 0, NULL, 1);
+    // xTaskCreate(testTask, "[testTask]", 4096, NULL, 0, NULL);
+    xTaskCreate(mqttTask, "[mqttTask]", 4096, NULL, 0, NULL);
 }

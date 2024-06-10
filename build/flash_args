@@ -2,4 +2,4 @@
 0x1000 bootloader/bootloader.bin
 0x10000 ESP32_INVERTER_BATTERY.bin
 0x8000 partition_table/partition-table.bin
-0x110000 storage.bin
+0x210000 storage.bin

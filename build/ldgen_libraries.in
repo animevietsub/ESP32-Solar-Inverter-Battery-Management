@@ -75,4 +75,5 @@ $<TARGET_FILE:__idf_lvgl_touch>
 $<TARGET_FILE:__idf_lvgl_tft>
 $<TARGET_FILE:__idf_c_image>
 $<TARGET_FILE:__idf_c_font>
+$<TARGET_FILE:__idf_gamo_wlan>
 $<TARGET_FILE:__idf_main>

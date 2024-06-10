@@ -127,6 +127,7 @@ if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   include("E:/NEW_DATA/ESP32/ESP32_INVERTER_BATTERY/build/esp-idf/lvgl_tft/cmake_install.cmake")
   include("E:/NEW_DATA/ESP32/ESP32_INVERTER_BATTERY/build/esp-idf/c_image/cmake_install.cmake")
   include("E:/NEW_DATA/ESP32/ESP32_INVERTER_BATTERY/build/esp-idf/c_font/cmake_install.cmake")
+  include("E:/NEW_DATA/ESP32/ESP32_INVERTER_BATTERY/build/esp-idf/gamo_wlan/cmake_install.cmake")
   include("E:/NEW_DATA/ESP32/ESP32_INVERTER_BATTERY/build/esp-idf/main/cmake_install.cmake")
 
 endif()

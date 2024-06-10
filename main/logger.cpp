@@ -7,7 +7,7 @@ static const char *TAG = "[LOGGER]";
 
 static information_logger_t informationLogger = {
     .globalPercent = 0,
-    .globalEnergyLeft = 1000000,
+    .globalEnergyLeft = 1200000,
     .globalTotalCharged = 0,
     .globalRemainingTime = 0,
     .globalBatteryCurrent = 0,
@@ -44,7 +44,7 @@ void logger_UpdateInformation(void *pvParameter)
     static int32_t oldCurrent = 0;
     informationLogger.globalDeviceUtilization = (100 - lv_task_get_idle()) * 10;
     informationLogger.globalBatteryCurrent = (inverterLogger.globalBatteryIC - inverterLogger.globalBatteryIDC);
-    if (informationLogger.globalBatteryCurrent > 100 || informationLogger.globalBatteryCurrent < -100)
+    if (informationLogger.globalBatteryCurrent > 200 || informationLogger.globalBatteryCurrent < -200)
     {
         return;
     }
@@ -52,7 +52,7 @@ void logger_UpdateInformation(void *pvParameter)
     {
         return;
     }
-    if (((inverterLogger.globalPVPower - inverterLogger.globalOutputPower) <= 100) && informationLogger.globalBatteryCurrent <= 0)
+    if ((inverterLogger.globalPVPower <= 50) && informationLogger.globalBatteryCurrent <= 0)
     {
         extraCurrent = -1l;
     }
@@ -76,6 +76,11 @@ void logger_UpdateInformation(void *pvParameter)
     }
     if (inverterLogger.globalBatteryVoltage >= 5680 && informationLogger.globalBatteryCurrent == 0)
     {
+        informationLogger.globalBatteryHealth = 100 - ((5000000l - informationLogger.globalEnergyLeft) * 100 / 5000000l);
+        if (informationLogger.globalBatteryHealth > 100)
+            informationLogger.globalBatteryHealth = 100;
+        else if (informationLogger.globalBatteryHealth < 0)
+            informationLogger.globalBatteryHealth = 0;
         informationLogger.globalEnergyLeft = 5000000l;
     }
     if (inverterLogger.globalBatteryVoltage == 5120 && informationLogger.globalBatteryCurrent == 0)
@@ -132,7 +137,7 @@ void logger_Task(void *pvParameter)
             continue;
         }
         uart_write_bytes(UART_NUM_1, QPIGS, strlen(QPIGS));
-        if ((informationLogger.globalPercent >= 25) && (inverterLogger.globalPVPower >= 200))
+        if ((informationLogger.globalPercent > 25) && (inverterLogger.globalPVPower >= 200))
         {
             uart_wait_tx_idle_polling(UART_NUM_1);
             if (loggerSkip)
@@ -151,7 +156,7 @@ void logger_Task(void *pvParameter)
             vTaskDelay(pdMS_TO_TICKS(1000));
             uart_write_bytes(UART_NUM_1, START_INVERTER_2, strlen(START_INVERTER_2));
         }
-        else if (informationLogger.globalPercent <= 20)
+        else if (informationLogger.globalPercent <= 25)
         {
             uart_wait_tx_idle_polling(UART_NUM_1);
             if (loggerSkip)
@@ -172,7 +177,7 @@ void logger_Task(void *pvParameter)
         }
         uart_wait_tx_idle_polling(UART_NUM_1);
         xSemaphoreGive(loggerSemaphore);
-        vTaskDelay(pdMS_TO_TICKS(3000));
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
 

@@ -7,3 +7,4 @@ if (NOT DEFINED PROJECT_NAME)
 	project(ESP32_INVERTER_BATTERY)
 endif (NOT DEFINED PROJECT_NAME)
 spiffs_create_partition_image(storage data FLASH_IN_PROJECT)
+

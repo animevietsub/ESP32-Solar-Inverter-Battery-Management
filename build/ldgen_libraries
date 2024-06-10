@@ -75,4 +75,5 @@ E:/NEW_DATA/ESP32/ESP32_INVERTER_BATTERY/build/esp-idf/lvgl_touch/liblvgl_touch.
 E:/NEW_DATA/ESP32/ESP32_INVERTER_BATTERY/build/esp-idf/lvgl_tft/liblvgl_tft.a
 E:/NEW_DATA/ESP32/ESP32_INVERTER_BATTERY/build/esp-idf/c_image/libc_image.a
 E:/NEW_DATA/ESP32/ESP32_INVERTER_BATTERY/build/esp-idf/c_font/libc_font.a
+E:/NEW_DATA/ESP32/ESP32_INVERTER_BATTERY/build/esp-idf/gamo_wlan/libgamo_wlan.a
 E:/NEW_DATA/ESP32/ESP32_INVERTER_BATTERY/build/esp-idf/main/libmain.a

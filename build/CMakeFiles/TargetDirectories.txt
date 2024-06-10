@@ -708,6 +708,13 @@ E:/NEW_DATA/ESP32/ESP32_INVERTER_BATTERY/build/esp-idf/c_font/CMakeFiles/install
 E:/NEW_DATA/ESP32/ESP32_INVERTER_BATTERY/build/esp-idf/c_font/CMakeFiles/edit_cache.dir
 E:/NEW_DATA/ESP32/ESP32_INVERTER_BATTERY/build/esp-idf/c_font/CMakeFiles/rebuild_cache.dir
 E:/NEW_DATA/ESP32/ESP32_INVERTER_BATTERY/build/esp-idf/c_font/CMakeFiles/install/strip.dir
+E:/NEW_DATA/ESP32/ESP32_INVERTER_BATTERY/build/esp-idf/gamo_wlan/CMakeFiles/list_install_components.dir
+E:/NEW_DATA/ESP32/ESP32_INVERTER_BATTERY/build/esp-idf/gamo_wlan/CMakeFiles/__idf_gamo_wlan.dir
+E:/NEW_DATA/ESP32/ESP32_INVERTER_BATTERY/build/esp-idf/gamo_wlan/CMakeFiles/install/local.dir
+E:/NEW_DATA/ESP32/ESP32_INVERTER_BATTERY/build/esp-idf/gamo_wlan/CMakeFiles/install.dir
+E:/NEW_DATA/ESP32/ESP32_INVERTER_BATTERY/build/esp-idf/gamo_wlan/CMakeFiles/edit_cache.dir
+E:/NEW_DATA/ESP32/ESP32_INVERTER_BATTERY/build/esp-idf/gamo_wlan/CMakeFiles/rebuild_cache.dir
+E:/NEW_DATA/ESP32/ESP32_INVERTER_BATTERY/build/esp-idf/gamo_wlan/CMakeFiles/install/strip.dir
 E:/NEW_DATA/ESP32/ESP32_INVERTER_BATTERY/build/esp-idf/main/CMakeFiles/install/local.dir
 E:/NEW_DATA/ESP32/ESP32_INVERTER_BATTERY/build/esp-idf/main/CMakeFiles/install.dir
 E:/NEW_DATA/ESP32/ESP32_INVERTER_BATTERY/build/esp-idf/main/CMakeFiles/edit_cache.dir
