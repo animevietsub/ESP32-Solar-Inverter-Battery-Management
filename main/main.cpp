@@ -20,6 +20,7 @@ void testTask(void *pvParameter)
         ui_UpdateBatteryPercent(_informationLogger->globalPercent);
         ui_UpdateBatteryVoltage(_inverterLogger->globalBatteryVoltage / 10);
         ui_UpdateInformation();
+        ui_UpdateTime();
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
@@ -28,7 +29,7 @@ void mqttTask(void *pvParameter)
 {
     char *data = (char *)malloc(256);
     memset(data, 0, 256);
-    vTaskDelay(15000);
+    vTaskDelay(pdMS_TO_TICKS(15000));
     while (1)
     {
         sprintf(data, "%d", _informationLogger->globalPercent);
@@ -43,14 +44,15 @@ void mqttTask(void *pvParameter)
         mqtt_Publish("ds/BATTERY VOLTAGE", data);
         sprintf(data, "%d", _informationLogger->globalBatteryCurrent);
         mqtt_Publish("ds/BATTERY CURRENT", data);
-        sprintf(data, "%d", 0);
+        sprintf(data, "%.1f", (float)_inverterLogger->globalGridVoltage / 10);
         mqtt_Publish("ds/GRID VOLTAGE", data);
         sprintf(data, "%d", _inverterLogger->globalOutputPower);
         mqtt_Publish("ds/OUTPUT POWER", data);
-        sprintf(data, "%d", (float)_informationLogger->globalTotalCharged / 1000000);
+        sprintf(data, "%.3f", (float)_informationLogger->globalTotalCharged / 1000000);
         mqtt_Publish("ds/TOTAL GENERATED", data);
-        sprintf(data, "%d", 0);
+        sprintf(data, "%d", _inverterLogger->globalTemperature);
         mqtt_Publish("ds/TEMPERATURE", data);
+        mqtt_Publish("get/utc/all/json", "");
         vTaskDelay(pdMS_TO_TICKS(5000));
     }
 }
@@ -109,9 +111,9 @@ extern "C" void app_main()
     gamo_wifi_init_sta();
     mqtt_Init();
     gamo_wifi_connect("TheKey_2", "", mqtt_Start);
-    // printf("\r\nAPP %s is start!~\r\n", TAG);
-    // vTaskDelay(1000 / portTICK_PERIOD_MS);
-    // xTaskCreatePinnedToCore(guiTask, "[guiTask]", 4096 * 2, NULL, 0, NULL, 1);
-    // xTaskCreate(testTask, "[testTask]", 4096, NULL, 0, NULL);
+    printf("\r\nAPP %s is start!~\r\n", TAG);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
+    xTaskCreatePinnedToCore(guiTask, "[guiTask]", 4096 * 2, NULL, 0, NULL, 1);
+    xTaskCreate(testTask, "[testTask]", 4096, NULL, 0, NULL);
     xTaskCreate(mqttTask, "[mqttTask]", 4096, NULL, 0, NULL);
 }

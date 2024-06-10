@@ -51,7 +51,27 @@ lv_obj_t *unitInfo2;
 lv_obj_t *labelInfo3;
 lv_obj_t *valueInfo3;
 lv_obj_t *unitInfo3;
+lv_obj_t *labelTime;
+lv_obj_t *labelTimeEx;
 information_logger_t *informationLogger;
+
+void ui_UpdateTime()
+{
+    if (lv_disp_get_scr_act(NULL) == NULL)
+        return;
+    char stringData[20];
+    if ((informationLogger->globalRealTime / 3600) % 24 <= 12)
+    {
+        sprintf(stringData, "%02lld:%02lld ", (informationLogger->globalRealTime / 3600) % 24, (informationLogger->globalRealTime / 60) % 60);
+        lv_label_set_text(labelTimeEx, "AM ");
+    }
+    if ((informationLogger->globalRealTime / 3600) % 24 > 12)
+    {
+        sprintf(stringData, "%02lld:%02lld ", ((informationLogger->globalRealTime / 3600) % 24) - 12, (informationLogger->globalRealTime / 60) % 60);
+        lv_label_set_text(labelTimeEx, "PM ");
+    }
+    lv_label_set_text(labelTime, stringData);
+}
 
 void ui_UpdateInformation()
 {
@@ -68,7 +88,7 @@ void ui_UpdateInformation()
         lv_label_set_text(valueInfo1, stringData);
         lv_label_set_text(unitInfo1, "kWh ");
         lv_label_set_text(labelInfo2, "Total charged ");
-        sprintf(stringData, "%d.%d ", informationLogger->globalTotalCharged / 10, informationLogger->globalTotalCharged % 10);
+        sprintf(stringData, "%d.%03d ", informationLogger->globalTotalCharged / 1000 / 1000, informationLogger->globalTotalCharged / 1000 % 1000);
         lv_label_set_text(valueInfo2, stringData);
         lv_label_set_text(unitInfo2, "kWh ");
         lv_label_set_text(labelInfo3, "Remaining time ");
@@ -437,14 +457,14 @@ void ui_HomeInit()
     lv_obj_set_style_local_border_opa(buttonCornerSetting, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, 0);
     lv_obj_set_event_cb(buttonCornerSetting, ui_CornerClickEvent);
 
-    lv_obj_t *labelTime = lv_label_create(screen_Home, NULL);
-    lv_label_set_text(labelTime, "11:25 ");
+    labelTime = lv_label_create(screen_Home, NULL);
+    lv_label_set_text(labelTime, "00:00 ");
     lv_obj_set_style_local_text_color(labelTime, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, lv_color_hex(0xFFFFFF));
     lv_obj_set_style_local_text_font(labelTime, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, &ui_font_medium);
     lv_obj_align(labelTime, NULL, LV_ALIGN_IN_TOP_MID, 80, 0);
 
-    lv_obj_t *labelTimeEx = lv_label_create(screen_Home, NULL);
-    lv_label_set_text(labelTimeEx, "PM ");
+    labelTimeEx = lv_label_create(screen_Home, NULL);
+    lv_label_set_text(labelTimeEx, "AM ");
     lv_obj_set_style_local_text_color(labelTimeEx, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, lv_color_hex(0xFFFFFF));
     lv_obj_set_style_local_text_font(labelTimeEx, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, &ui_font_small);
     lv_obj_align(labelTimeEx, labelTime, LV_ALIGN_OUT_RIGHT_BOTTOM, 0, -2);
@@ -503,8 +523,8 @@ void ui_SettingInit()
     lv_obj_set_style_local_text_font(labelTime, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, &ui_font_medium);
     lv_obj_align(labelTime, NULL, LV_ALIGN_IN_TOP_MID, 80, 0);
 
-    lv_obj_t *labelTimeEx = lv_label_create(screen_Setting, NULL);
-    lv_label_set_text(labelTimeEx, "PM ");
+    labelTimeEx = lv_label_create(screen_Setting, NULL);
+    lv_label_set_text(labelTimeEx, "AM ");
     lv_obj_set_style_local_text_color(labelTimeEx, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, lv_color_hex(0xFFFFFF));
     lv_obj_set_style_local_text_font(labelTimeEx, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, &ui_font_small);
     lv_obj_align(labelTimeEx, labelTime, LV_ALIGN_OUT_RIGHT_BOTTOM, 0, -2);

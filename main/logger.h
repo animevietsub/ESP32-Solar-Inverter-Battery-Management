@@ -41,6 +41,7 @@ typedef struct _information_logger_t
     int32_t globalDeviceFirmware;
     uint32_t globalDeviceUpTime;
     uint16_t globalDeviceUtilization;
+    int64_t globalRealTime;
 } information_logger_t;
 
 typedef struct _inverter_logger_t
@@ -50,7 +51,8 @@ typedef struct _inverter_logger_t
     int32_t globalBatteryIDC;
     int32_t globalPVPower;
     int32_t globalOutputPower;
-    uint8_t globalInverterMode;
+    int32_t globalGridVoltage;
+    int32_t globalTemperature;
 } inverter_logger_t;
 
 void logger_GetInformation(information_logger_t **informationLogger_);

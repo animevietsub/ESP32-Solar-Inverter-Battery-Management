@@ -7,7 +7,7 @@ static const char *TAG = "[LOGGER]";
 
 static information_logger_t informationLogger = {
     .globalPercent = 0,
-    .globalEnergyLeft = 1200000,
+    .globalEnergyLeft = 4000000,
     .globalTotalCharged = 0,
     .globalRemainingTime = 0,
     .globalBatteryCurrent = 0,
@@ -16,6 +16,7 @@ static information_logger_t informationLogger = {
     .globalDeviceFirmware = 10,
     .globalDeviceUpTime = 0,
     .globalDeviceUtilization = 0,
+    .globalRealTime = 0,
 };
 
 static inverter_logger_t inverterLogger = {
@@ -24,6 +25,8 @@ static inverter_logger_t inverterLogger = {
     .globalBatteryIDC = 0,
     .globalPVPower = 0,
     .globalOutputPower = 0,
+    .globalGridVoltage = 0,
+    .globalTemperature = 0,
 };
 
 void logger_GetInformation(information_logger_t **informationLogger_)
@@ -64,7 +67,7 @@ void logger_UpdateInformation(void *pvParameter)
     engeryExchange *= (informationLogger.globalBatteryCurrent + extraCurrent);
     engeryExchange /= 360l;
     informationLogger.globalEnergyLeft += engeryExchange;
-    informationLogger.globalTotalCharged = inverterLogger.globalPVPower * 10; // Test
+    informationLogger.globalTotalCharged += (inverterLogger.globalPVPower * 5) / 18;
     informationLogger.globalDeviceUpTime += 1;
     if (engeryExchange < 0)
     {
@@ -88,14 +91,17 @@ void logger_UpdateInformation(void *pvParameter)
         informationLogger.globalEnergyLeft = 1000000l;
     }
     informationLogger.globalPercent = informationLogger.globalEnergyLeft * 100 / 5000000l;
-
-    if (oldVoltage != 0 && oldCurrent != 0)
+    if ((informationLogger.globalRealTime / 3600) % 24 == 0 && (informationLogger.globalRealTime / 60) % 60 == 0)
     {
-        if (abs(oldVoltage - inverterLogger.globalBatteryVoltage) > 0050l)
-        {
-            informationLogger.globalBatteryESR = (informationLogger.globalBatteryESR * (SAMPLE_RATE_ESR - 1) + abs(oldVoltage - inverterLogger.globalBatteryVoltage) * 100 / abs(oldCurrent - informationLogger.globalBatteryCurrent)) / SAMPLE_RATE_ESR;
-        }
+        informationLogger.globalTotalCharged = 0;
     }
+        if (oldVoltage != 0 && oldCurrent != 0)
+        {
+            if (abs(oldVoltage - inverterLogger.globalBatteryVoltage) > 0050l)
+            {
+                informationLogger.globalBatteryESR = (informationLogger.globalBatteryESR * (SAMPLE_RATE_ESR - 1) + abs(oldVoltage - inverterLogger.globalBatteryVoltage) * 100 / abs(oldCurrent - informationLogger.globalBatteryCurrent)) / SAMPLE_RATE_ESR;
+            }
+        }
     oldVoltage = inverterLogger.globalBatteryVoltage;
     oldCurrent = informationLogger.globalBatteryCurrent;
 }
@@ -221,6 +227,8 @@ void response_Task(void *pvParameter)
                 inverterLogger.globalBatteryIDC = (responseData[77] - 0x30) * 10000 + (responseData[78] - 0x30) * 1000 + (responseData[79] - 0x30) * 100 + (responseData[80] - 0x30) * 10 + (responseData[81] - 0x30);
                 inverterLogger.globalPVPower = (responseData[98] - 0x30) * 10000 + (responseData[99] - 0x30) * 1000 + (responseData[100] - 0x30) * 100 + (responseData[101] - 0x30) * 10 + (responseData[102] - 0x30);
                 inverterLogger.globalOutputPower = (responseData[28] - 0x30) * 1000 + (responseData[29] - 0x30) * 100 + (responseData[30] - 0x30) * 10 + (responseData[31] - 0x30);
+                inverterLogger.globalGridVoltage = (responseData[1] - 0x30) * 1000 + (responseData[2] - 0x30) * 100 + (responseData[3] - 0x30) * 10 + (responseData[5] - 0x30);
+                inverterLogger.globalTemperature = (responseData[55] - 0x30) * 1000 + (responseData[56] - 0x30) * 100 + (responseData[57] - 0x30) * 10 + (responseData[58] - 0x30);
                 responseData[0] = 0x00;
                 responseData[109] = 0x00;
                 continue;

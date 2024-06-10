@@ -22,5 +22,6 @@ void ui_SettingInit();
 void ui_UpdateBatteryPercent(int32_t percent);
 void ui_UpdateBatteryVoltage(int32_t voltage);
 void ui_UpdateInformation();
+void ui_UpdateTime();
 
 #endif
