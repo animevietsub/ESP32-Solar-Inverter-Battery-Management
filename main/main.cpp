@@ -21,6 +21,15 @@ void testTask(void *pvParameter)
         ui_UpdateBatteryVoltage(_inverterLogger->globalBatteryVoltage / 10);
         ui_UpdateInformation();
         ui_UpdateTime();
+        if (_inverterLogger->globalBatteryVoltage <= 5120 && _informationLogger->globalBatteryCurrent == 0)
+        {
+            _informationLogger->globalEnergyLeft = 1000000;
+            relay_On();
+        }
+        else
+        {
+            relay_Off();
+        }
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
@@ -106,11 +115,10 @@ void guiTask(void *pvParameter)
 extern "C" void app_main()
 {
     relay_Init();
-    relay_On(); // Test only
     logger_InitUART();
     gamo_wifi_init_sta();
     mqtt_Init();
-    gamo_wifi_connect("TheKey_2", "", mqtt_Start);
+    gamo_wifi_connect("TheKey_0", "23456789", mqtt_Start);
     printf("\r\nAPP %s is start!~\r\n", TAG);
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     xTaskCreatePinnedToCore(guiTask, "[guiTask]", 4096 * 2, NULL, 0, NULL, 1);

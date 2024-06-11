@@ -7,7 +7,7 @@ static const char *TAG = "[LOGGER]";
 
 static information_logger_t informationLogger = {
     .globalPercent = 0,
-    .globalEnergyLeft = 4000000,
+    .globalEnergyLeft = 2000000,
     .globalTotalCharged = 0,
     .globalRemainingTime = 0,
     .globalBatteryCurrent = 0,
@@ -39,7 +39,7 @@ void logger_GetInverterInformation(inverter_logger_t **inverterLogger_)
     *(inverterLogger_) = &inverterLogger;
 }
 
-void logger_UpdateInformation(void *pvParameter)
+static void logger_UpdateInformation(void *pvParameter)
 {
     static int32_t engeryExchange = 0;
     static int32_t extraCurrent = 0;
@@ -97,7 +97,7 @@ void logger_UpdateInformation(void *pvParameter)
     }
         if (oldVoltage != 0 && oldCurrent != 0)
         {
-            if (abs(oldVoltage - inverterLogger.globalBatteryVoltage) > 0050l)
+            if (abs(oldVoltage - inverterLogger.globalBatteryVoltage) > 0050l && abs(oldCurrent - informationLogger.globalBatteryCurrent) > 0)
             {
                 informationLogger.globalBatteryESR = (informationLogger.globalBatteryESR * (SAMPLE_RATE_ESR - 1) + abs(oldVoltage - inverterLogger.globalBatteryVoltage) * 100 / abs(oldCurrent - informationLogger.globalBatteryCurrent)) / SAMPLE_RATE_ESR;
             }
@@ -183,7 +183,7 @@ void logger_Task(void *pvParameter)
         }
         uart_wait_tx_idle_polling(UART_NUM_1);
         xSemaphoreGive(loggerSemaphore);
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        vTaskDelay(pdMS_TO_TICKS(2000)); 
     }
 }
 

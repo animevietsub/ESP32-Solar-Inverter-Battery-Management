@@ -41,7 +41,7 @@ static void mqtt_EventHandler(void *handler_args, esp_event_base_t base, int32_t
             char *end_point = strstr(start_point, ",");
             *(end_point) = '\0';
             // ESP_LOGI(TAG, "%s", start_point);
-            __informationLogger->globalRealTime = atoll(start_point) / 1000 + 7 * 60 * 60;
+            __informationLogger->globalRealTime = (atoll(start_point) / 1000) + 7 * 60 * 60;
             // ESP_LOGI(TAG, "%lld", __informationLogger->globalRealTime);
         }
         break;
@@ -77,5 +77,5 @@ void mqtt_Start(void *pvParameter)
 void mqtt_Publish(const char *topic, const char *data)
 {
     if (mqttStatus == MQTT_EVENT_CONNECTED)
-        esp_mqtt_client_publish(client, topic, data, 0, 1, 0);
+            esp_mqtt_client_publish(client, topic, data, 0, 1, 0);
 }

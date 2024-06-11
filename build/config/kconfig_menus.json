@@ -13421,7 +13421,7 @@
                         "id": "FREERTOS_ISR_STACKSIZE",
                         "name": "FREERTOS_ISR_STACKSIZE",
                         "range": [
-                            1536,
+                            2096,
                             32768
                         ],
                         "title": "ISR stack size",

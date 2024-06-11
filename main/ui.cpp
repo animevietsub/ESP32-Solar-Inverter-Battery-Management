@@ -65,7 +65,7 @@ void ui_UpdateTime()
         sprintf(stringData, "%02lld:%02lld ", (informationLogger->globalRealTime / 3600) % 24, (informationLogger->globalRealTime / 60) % 60);
         lv_label_set_text(labelTimeEx, "AM ");
     }
-    if ((informationLogger->globalRealTime / 3600) % 24 > 12)
+    else if ((informationLogger->globalRealTime / 3600) % 24 > 12)
     {
         sprintf(stringData, "%02lld:%02lld ", ((informationLogger->globalRealTime / 3600) % 24) - 12, (informationLogger->globalRealTime / 60) % 60);
         lv_label_set_text(labelTimeEx, "PM ");
@@ -523,7 +523,7 @@ void ui_SettingInit()
     lv_obj_set_style_local_text_font(labelTime, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, &ui_font_medium);
     lv_obj_align(labelTime, NULL, LV_ALIGN_IN_TOP_MID, 80, 0);
 
-    labelTimeEx = lv_label_create(screen_Setting, NULL);
+    lv_obj_t *labelTimeEx = lv_label_create(screen_Setting, NULL);
     lv_label_set_text(labelTimeEx, "AM ");
     lv_obj_set_style_local_text_color(labelTimeEx, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, lv_color_hex(0xFFFFFF));
     lv_obj_set_style_local_text_font(labelTimeEx, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, &ui_font_small);
