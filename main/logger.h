@@ -55,8 +55,22 @@ typedef struct _inverter_logger_t
     int32_t globalTemperature;
 } inverter_logger_t;
 
+typedef struct _inverter_setting_t
+{
+    int32_t globalCutOffLevel;
+    int32_t globalStartLevel;
+    int32_t globalExternalVoltage;
+    int32_t globalExternalLevel;
+    int32_t globalTotalEnergy;
+    int32_t globalPVMin;
+    char globalSSID[50];
+    char globalPassword[50];
+    char globalToken[50];
+} inverter_setting_t;
+
 void logger_GetInformation(information_logger_t **informationLogger_);
 void logger_GetInverterInformation(inverter_logger_t **inverterLogger_);
+void logger_GetInverterSetting(inverter_setting_t **inverterSetting_);
 void logger_UpdateInformation();
 void logger_InitUART();
 char *logger_InverterString(char *data);

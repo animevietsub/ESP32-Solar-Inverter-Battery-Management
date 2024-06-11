@@ -20,6 +20,6 @@ void ui_AnimSetOpa(lv_obj_t *obj, int32_t value);
 void ui_AnimSetXMove(lv_obj_t *obj, int32_t value);
 void ui_IconShowAnimation(lv_obj_t *obj, int delay);
 void ui_InfoShowAnimation(lv_obj_t *obj, int delay);
-lv_obj_t *ui_RollerCreate(lv_obj_t *parent, lv_coord_t w, lv_coord_t h, lv_obj_t *base, lv_align_t align, lv_coord_t x_ofs, lv_coord_t y_ofs, lv_border_side_t border_side, const char *label_text, const char *options_text);
+lv_obj_t *ui_RollerCreate(lv_obj_t *parent, lv_event_cb_t event_cb, lv_coord_t w, lv_coord_t h, lv_obj_t *base, lv_align_t align, lv_coord_t x_ofs, lv_coord_t y_ofs, lv_border_side_t border_side, const char *label_text, const char *options_text);
 
 #endif

@@ -78,7 +78,7 @@ void ui_InfoShowAnimation(lv_obj_t *obj, int delay)
     lv_anim_start(&animXMove);
 }
 
-lv_obj_t *ui_RollerCreate(lv_obj_t *parent, lv_coord_t w, lv_coord_t h, lv_obj_t *base, lv_align_t align, lv_coord_t x_ofs, lv_coord_t y_ofs, lv_border_side_t border_side, const char *label_text, const char *options_text)
+lv_obj_t *ui_RollerCreate(lv_obj_t *parent, lv_event_cb_t event_cb, lv_coord_t w, lv_coord_t h, lv_obj_t *base, lv_align_t align, lv_coord_t x_ofs, lv_coord_t y_ofs, lv_border_side_t border_side, const char *label_text, const char *options_text)
 {
     lv_obj_t *ui_Roller;
     ui_Roller = lv_obj_create(parent, NULL);
@@ -133,6 +133,7 @@ lv_obj_t *ui_RollerCreate(lv_obj_t *parent, lv_coord_t w, lv_coord_t h, lv_obj_t
     lv_obj_set_style_local_bg_opa(roller, LV_ROLLER_PART_SELECTED, LV_STATE_DEFAULT, LV_OPA_COVER);
 
     lv_obj_align(roller, label, LV_ALIGN_OUT_BOTTOM_MID, 0, 8);
-
+    lv_obj_set_event_cb(roller, event_cb);
+    
     return ui_Roller;
 }

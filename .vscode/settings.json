@@ -67,5 +67,5 @@
         "typeinfo": "cpp"
     },
     "idf.flashType": "UART",
-    "idf.portWin": "COM29"
+    "idf.portWin": "COM3"
 }

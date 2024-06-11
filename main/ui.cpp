@@ -53,6 +53,10 @@ lv_obj_t *valueInfo3;
 lv_obj_t *unitInfo3;
 lv_obj_t *labelTime;
 lv_obj_t *labelTimeEx;
+lv_obj_t *rollerCutOffLevel;
+lv_obj_t *rollerStartLevel;
+lv_obj_t *rollerExternalVoltage;
+lv_obj_t *rollerTotalEnergy;
 information_logger_t *informationLogger;
 
 void ui_UpdateTime()
@@ -183,6 +187,26 @@ void ui_CornerClickEvent(lv_obj_t *obj, lv_event_t event)
         if (obj == buttonCornerSetting)
         {
             lv_disp_load_scr(screen_Setting);
+        }
+    }
+}
+
+void ui_RollerEvent(lv_obj_t *obj, lv_event_t event)
+{
+    lv_obj_set_state(obj, LV_STATE_DEFAULT);
+    if (event == LV_EVENT_VALUE_CHANGED)
+    {
+        if (obj == rollerCutOffLevel)
+        {
+        }
+        else if (obj == rollerStartLevel)
+        {
+        }
+        else if (obj == rollerExternalVoltage)
+        {
+        }
+        else if (obj == rollerTotalEnergy)
+        {
         }
     }
 }
@@ -547,10 +571,10 @@ void ui_SettingInit()
     lv_obj_set_style_local_text_font(iconLink, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, &ui_font_icon);
     lv_obj_align(iconLink, NULL, LV_ALIGN_IN_BOTTOM_MID, 20, -224);
 
-    ui_RollerCreate(screen_Setting, 320 / 3, 95, NULL, LV_ALIGN_IN_TOP_LEFT, 0, 35, LV_BORDER_SIDE_NONE, " Cut-off level ", " 0.500 kWh \n 1.000 kWh \n 1.500 kWh \n 2.000 kWh \n 2.500 kWh \n 3.000 kWh \n 3.500 kWh \n 4.000 kWh \n 4.500 kWh \n 5.000 kWh \n 5.500 kWh \n 6.000 kWh");
-    ui_RollerCreate(screen_Setting, 320 / 3, 95, NULL, LV_ALIGN_IN_TOP_MID, 0, 35, LV_BORDER_SIDE_LEFT | LV_BORDER_SIDE_RIGHT, " Start level ", " 0.500 kWh \n 1.000 kWh \n 1.500 kWh \n 2.000 kWh \n 2.500 kWh \n 3.000 kWh \n 3.500 kWh \n 4.000 kWh \n 4.500 kWh \n 5.000 kWh \n 5.500 kWh \n 6.000 kWh");
-    ui_RollerCreate(screen_Setting, 320 / 3, 95, NULL, LV_ALIGN_IN_TOP_RIGHT, 0, 35, LV_BORDER_SIDE_NONE, " External voltage ", " 50.0 V \n 50.1 V \n 50.2 V \n 50.3 V \n 50.4 V \n 50.5 V \n 50.6 V \n 50.7 V \n 50.8 V \n 50.9 V \n 51.0 V \n Disable ");
-    ui_RollerCreate(screen_Setting, 320 / 3, 95, NULL, LV_ALIGN_IN_TOP_LEFT, 0, 40 + 95, LV_BORDER_SIDE_NONE, " Total energy ", " 2.500 kWh \n 5.000 kWh \n 7.500 kWh \n 10.000 kWh \n 12.500 kWh \n 15.000 kWh \n 17.500 kWh \n 20.000 kWh ");
+    rollerCutOffLevel = ui_RollerCreate(screen_Setting, ui_RollerEvent, 320 / 3, 95, NULL, LV_ALIGN_IN_TOP_LEFT, 0, 35, LV_BORDER_SIDE_NONE, " Cut-off level ", " 0.500 kWh \n 1.000 kWh \n 1.500 kWh \n 2.000 kWh \n 2.500 kWh \n 3.000 kWh \n 3.500 kWh \n 4.000 kWh \n 4.500 kWh \n 5.000 kWh \n 5.500 kWh \n 6.000 kWh");
+    rollerStartLevel = ui_RollerCreate(screen_Setting, ui_RollerEvent, 320 / 3, 95, NULL, LV_ALIGN_IN_TOP_MID, 0, 35, LV_BORDER_SIDE_LEFT | LV_BORDER_SIDE_RIGHT, " Start level ", " 0.500 kWh \n 1.000 kWh \n 1.500 kWh \n 2.000 kWh \n 2.500 kWh \n 3.000 kWh \n 3.500 kWh \n 4.000 kWh \n 4.500 kWh \n 5.000 kWh \n 5.500 kWh \n 6.000 kWh");
+    rollerExternalVoltage = ui_RollerCreate(screen_Setting, ui_RollerEvent, 320 / 3, 95, NULL, LV_ALIGN_IN_TOP_RIGHT, 0, 35, LV_BORDER_SIDE_NONE, " External voltage ", " 50.0 V \n 50.1 V \n 50.2 V \n 50.3 V \n 50.4 V \n 50.5 V \n 50.6 V \n 50.7 V \n 50.8 V \n 50.9 V \n 51.0 V \n Disable ");
+    rollerTotalEnergy = ui_RollerCreate(screen_Setting, ui_RollerEvent, 320 / 3, 95, NULL, LV_ALIGN_IN_TOP_LEFT, 0, 40 + 95, LV_BORDER_SIDE_NONE, " Total energy ", " 2.500 kWh \n 5.000 kWh \n 7.500 kWh \n 10.000 kWh \n 12.500 kWh \n 15.000 kWh \n 17.500 kWh \n 20.000 kWh ");
 
     lv_obj_t *extInformation = lv_obj_create(screen_Setting, NULL);
     lv_obj_set_size(extInformation, 320 * 2 / 3, 95);

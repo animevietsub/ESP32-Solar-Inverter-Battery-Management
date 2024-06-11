@@ -4,10 +4,12 @@
 #include <relay.h>
 #include <gamo_wlan.h>
 #include <mqtt.h>
+#include <nvs.h>
 
 SemaphoreHandle_t xGuiSemaphore;
 inverter_logger_t *_inverterLogger;
 information_logger_t *_informationLogger;
+inverter_setting_t *_inverterSetting;
 
 static const char *TAG = "[MAIN]";
 
@@ -23,7 +25,8 @@ void testTask(void *pvParameter)
         ui_UpdateTime();
         if (_inverterLogger->globalBatteryVoltage <= 5120 && _informationLogger->globalBatteryCurrent == 0)
         {
-            _informationLogger->globalEnergyLeft = 1000000;
+            if (_informationLogger->globalEnergyLeft < 1000000)
+                _informationLogger->globalEnergyLeft = 1000000;
             relay_On();
         }
         else
@@ -114,14 +117,18 @@ void guiTask(void *pvParameter)
 
 extern "C" void app_main()
 {
-    relay_Init();
     logger_InitUART();
+    relay_Init();
     gamo_wifi_init_sta();
-    mqtt_Init();
-    gamo_wifi_connect("TheKey_0", "23456789", mqtt_Start);
-    printf("\r\nAPP %s is start!~\r\n", TAG);
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
-    xTaskCreatePinnedToCore(guiTask, "[guiTask]", 4096 * 2, NULL, 0, NULL, 1);
-    xTaskCreate(testTask, "[testTask]", 4096, NULL, 0, NULL);
-    xTaskCreate(mqttTask, "[mqttTask]", 4096, NULL, 0, NULL);
+    logger_GetInverterSetting(&_inverterSetting);
+    ESP_LOG_BUFFER_HEXDUMP(TAG, _inverterSetting, sizeof(inverter_setting_t), ESP_LOG_INFO);
+    nvs_ReadInverterSetting(_inverterSetting);
+    ESP_LOG_BUFFER_HEXDUMP(TAG, _inverterSetting, sizeof(inverter_setting_t), ESP_LOG_INFO);
+    // mqtt_Init();
+    // gamo_wifi_connect("TheKey_0", "23456789", mqtt_Start);
+    // printf("\r\nAPP %s is start!~\r\n", TAG);
+    // vTaskDelay(1000 / portTICK_PERIOD_MS);
+    // xTaskCreatePinnedToCore(guiTask, "[guiTask]", 4096 * 2, NULL, 0, NULL, 1);
+    // xTaskCreate(testTask, "[testTask]", 4096, NULL, 0, NULL);
+    // xTaskCreate(mqttTask, "[mqttTask]", 4096, NULL, 0, NULL);
 }

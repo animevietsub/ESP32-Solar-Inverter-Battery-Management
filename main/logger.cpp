@@ -29,6 +29,15 @@ static inverter_logger_t inverterLogger = {
     .globalTemperature = 0,
 };
 
+static inverter_setting_t inverterSetting = {
+    .globalCutOffLevel = 25,
+    .globalStartLevel = 25,
+    .globalExternalVoltage = 5120,
+    .globalExternalLevel = 20,
+    .globalTotalEnergy = 5000000,
+    .globalPVMin = 201,
+};
+
 void logger_GetInformation(information_logger_t **informationLogger_)
 {
     *(informationLogger_) = &informationLogger;
@@ -37,6 +46,11 @@ void logger_GetInformation(information_logger_t **informationLogger_)
 void logger_GetInverterInformation(inverter_logger_t **inverterLogger_)
 {
     *(inverterLogger_) = &inverterLogger;
+}
+
+void logger_GetInverterSetting(inverter_setting_t **inverterSetting_)
+{
+    *(inverterSetting_) = &inverterSetting;
 }
 
 static void logger_UpdateInformation(void *pvParameter)
@@ -95,13 +109,13 @@ static void logger_UpdateInformation(void *pvParameter)
     {
         informationLogger.globalTotalCharged = 0;
     }
-        if (oldVoltage != 0 && oldCurrent != 0)
+    if (oldVoltage != 0 && oldCurrent != 0)
+    {
+        if (abs(oldVoltage - inverterLogger.globalBatteryVoltage) > 0050l && abs(oldCurrent - informationLogger.globalBatteryCurrent) > 0)
         {
-            if (abs(oldVoltage - inverterLogger.globalBatteryVoltage) > 0050l && abs(oldCurrent - informationLogger.globalBatteryCurrent) > 0)
-            {
-                informationLogger.globalBatteryESR = (informationLogger.globalBatteryESR * (SAMPLE_RATE_ESR - 1) + abs(oldVoltage - inverterLogger.globalBatteryVoltage) * 100 / abs(oldCurrent - informationLogger.globalBatteryCurrent)) / SAMPLE_RATE_ESR;
-            }
+            informationLogger.globalBatteryESR = (informationLogger.globalBatteryESR * (SAMPLE_RATE_ESR - 1) + abs(oldVoltage - inverterLogger.globalBatteryVoltage) * 100 / abs(oldCurrent - informationLogger.globalBatteryCurrent)) / SAMPLE_RATE_ESR;
         }
+    }
     oldVoltage = inverterLogger.globalBatteryVoltage;
     oldCurrent = informationLogger.globalBatteryCurrent;
 }
@@ -183,7 +197,7 @@ void logger_Task(void *pvParameter)
         }
         uart_wait_tx_idle_polling(UART_NUM_1);
         xSemaphoreGive(loggerSemaphore);
-        vTaskDelay(pdMS_TO_TICKS(2000)); 
+        vTaskDelay(pdMS_TO_TICKS(2000));
     }
 }
 
