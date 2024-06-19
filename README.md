@@ -13,5 +13,5 @@ Update battery percentage to SmartESS app.
 
 Some images of LCD UI.
 
-![UI](https://github.com/animevietsub/ESP32-Solar-Inverter-Battery-Management/blob/main/github_img/lcd1.jpg)
-![UI](https://github.com/animevietsub/ESP32-Solar-Inverter-Battery-Management/blob/main/github_img/lcd2.jpg)
+![UI](https://github.com/animevietsub/ESP32-Solar-Inverter-Battery-Management/blob/main/github_img/lcd_1.jpg)
+![UI](https://github.com/animevietsub/ESP32-Solar-Inverter-Battery-Management/blob/main/github_img/lcd_2.jpg)
