@@ -64,6 +64,9 @@ void gamo_wifi_connect(const char *ssid, const char *password, TaskFunction_t ca
         },
     };
 
+    if (ssid[0] == '\0')
+        return;
+
     strcpy((char *)wifi_config.sta.ssid, ssid);
     strcpy((char *)wifi_config.sta.password, password);
 

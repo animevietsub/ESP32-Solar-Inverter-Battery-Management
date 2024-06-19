@@ -33,8 +33,8 @@ static void mqtt_EventHandler(void *handler_args, esp_event_base_t base, int32_t
         break;
     case MQTT_EVENT_DATA:
         ESP_LOGI(TAG, "MQTT_EVENT_DATA");
-        printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
-        printf("DATA=%.*s\r\n", event->data_len, event->data);
+        // printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
+        // printf("DATA=%.*s\r\n", event->data_len, event->data);
         if (strstr(event->topic, "downlink/utc/all/json") != NULL)
         {
             char *start_point = (char *)(strstr(event->data, "{\"time\":") + strlen("{\"time\":"));
@@ -54,16 +54,18 @@ static void mqtt_EventHandler(void *handler_args, esp_event_base_t base, int32_t
     }
 }
 
-void mqtt_Init()
+void mqtt_Init(char *auth_token)
 {
     logger_GetInformation(&__informationLogger);
     esp_mqtt_client_config_t mqtt_cfg = {
         .uri = BROKER_URI,
         .port = 1883,
         .username = "device",
-        .password = AUTH_TOKEN,
+        // .password = AUTH_TOKEN,
         .keepalive = 45,
     };
+
+    mqtt_cfg.password = auth_token;
     client = esp_mqtt_client_init(&mqtt_cfg);
     esp_mqtt_client_register_event(client, MQTT_EVENT_ANY, mqtt_EventHandler, NULL);
 }
@@ -77,5 +79,5 @@ void mqtt_Start(void *pvParameter)
 void mqtt_Publish(const char *topic, const char *data)
 {
     if (mqttStatus == MQTT_EVENT_CONNECTED)
-            esp_mqtt_client_publish(client, topic, data, 0, 1, 0);
+        esp_mqtt_client_publish(client, topic, data, 0, 1, 0);
 }

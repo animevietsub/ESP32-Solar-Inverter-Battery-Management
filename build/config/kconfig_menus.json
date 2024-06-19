@@ -13869,7 +13869,10 @@
                         "help": "Number of stack frames to save when tracing heap operation callers.\n\nMore stack frames uses more memory in the heap trace buffer (and slows down allocation), but\ncan provide useful information.",
                         "id": "HEAP_TRACING_STACK_DEPTH",
                         "name": "HEAP_TRACING_STACK_DEPTH",
-                        "range": null,
+                        "range": [
+                            0,
+                            10
+                        ],
                         "title": "Heap tracing stack depth",
                         "type": "int"
                     },

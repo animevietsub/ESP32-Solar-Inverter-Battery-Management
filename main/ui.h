@@ -16,6 +16,8 @@
 #include <lvgl/lvgl.h>
 #include <lvgl_helpers.h>
 
+#include <nvs.h>
+
 void ui_Init();
 void ui_HomeInit();
 void ui_SettingInit();

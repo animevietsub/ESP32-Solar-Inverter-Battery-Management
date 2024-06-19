@@ -27,7 +27,7 @@
 #define BROKER_URI "mqtt://sgp1.blynk.cloud"
 #define AUTH_TOKEN "CPyX3p3N3AactgHJpY7DOpESq9s9ElSR"
 
-void mqtt_Init();
+void mqtt_Init(char *auth_token);
 void mqtt_Start(void *pvParameter);
 void mqtt_Publish(const char *topic, const char *data);
 

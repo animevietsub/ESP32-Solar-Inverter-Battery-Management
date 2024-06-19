@@ -57,21 +57,24 @@ lv_obj_t *rollerCutOffLevel;
 lv_obj_t *rollerStartLevel;
 lv_obj_t *rollerExternalVoltage;
 lv_obj_t *rollerTotalEnergy;
+lv_obj_t *rollerPVMin;
+lv_obj_t *rollerExternalLevel;
 information_logger_t *informationLogger;
+inverter_setting_t *inverterSetting;
 
 void ui_UpdateTime()
 {
     if (lv_disp_get_scr_act(NULL) == NULL)
         return;
-    char stringData[20];
+    static char stringData[50];
     if ((informationLogger->globalRealTime / 3600) % 24 <= 12)
     {
-        sprintf(stringData, "%02lld:%02lld ", (informationLogger->globalRealTime / 3600) % 24, (informationLogger->globalRealTime / 60) % 60);
+        lv_snprintf(stringData, sizeof(stringData), "%02lld:%02lld ", (informationLogger->globalRealTime / 3600) % 24, (informationLogger->globalRealTime / 60) % 60);
         lv_label_set_text(labelTimeEx, "AM ");
     }
     else if ((informationLogger->globalRealTime / 3600) % 24 > 12)
     {
-        sprintf(stringData, "%02lld:%02lld ", ((informationLogger->globalRealTime / 3600) % 24) - 12, (informationLogger->globalRealTime / 60) % 60);
+        lv_snprintf(stringData, sizeof(stringData), "%02lld:%02lld ", ((informationLogger->globalRealTime / 3600) % 24) - 12, (informationLogger->globalRealTime / 60) % 60);
         lv_label_set_text(labelTimeEx, "PM ");
     }
     lv_label_set_text(labelTime, stringData);
@@ -83,20 +86,20 @@ void ui_UpdateInformation()
         return;
     else if (lv_disp_get_scr_act(NULL) != screen_Home)
         return;
-    char stringData[20];
+    static char stringData[50];
     if (ui_HomeInfoType == 0)
     {
         lv_label_set_text(labelInformation, "Energy Information ");
         lv_label_set_text(labelInfo1, "Energy left ");
-        sprintf(stringData, "%d.%03d ", informationLogger->globalEnergyLeft / 1000 / 1000, informationLogger->globalEnergyLeft / 1000 % 1000);
+        lv_snprintf(stringData, sizeof(stringData), "%d.%03d ", informationLogger->globalEnergyLeft / 1000 / 1000, informationLogger->globalEnergyLeft / 1000 % 1000);
         lv_label_set_text(valueInfo1, stringData);
         lv_label_set_text(unitInfo1, "kWh ");
         lv_label_set_text(labelInfo2, "Total charged ");
-        sprintf(stringData, "%d.%03d ", informationLogger->globalTotalCharged / 1000 / 1000, informationLogger->globalTotalCharged / 1000 % 1000);
+        lv_snprintf(stringData, sizeof(stringData), "%d.%03d ", informationLogger->globalTotalCharged / 1000 / 1000, informationLogger->globalTotalCharged / 1000 % 1000);
         lv_label_set_text(valueInfo2, stringData);
         lv_label_set_text(unitInfo2, "kWh ");
         lv_label_set_text(labelInfo3, "Remaining time ");
-        sprintf(stringData, "%+d:%02d:%02d ", informationLogger->globalRemainingTime / 60 / 60, abs(informationLogger->globalRemainingTime / 60 % 60), abs(informationLogger->globalRemainingTime % 60));
+        lv_snprintf(stringData, sizeof(stringData), "%+d:%02d:%02d ", informationLogger->globalRemainingTime / 60 / 60, abs(informationLogger->globalRemainingTime / 60 % 60), abs(informationLogger->globalRemainingTime % 60));
         lv_label_set_text(valueInfo3, stringData);
         lv_label_set_text(unitInfo3, " ");
         lv_obj_realign(unitInfo1);
@@ -107,15 +110,15 @@ void ui_UpdateInformation()
     {
         lv_label_set_text(labelInformation, "Battery Information ");
         lv_label_set_text(labelInfo1, "Battery current ");
-        sprintf(stringData, "%+d.%d ", informationLogger->globalBatteryCurrent, 0);
+        lv_snprintf(stringData, sizeof(stringData), "%+d.%d ", informationLogger->globalBatteryCurrent, 0);
         lv_label_set_text(valueInfo1, stringData);
         lv_label_set_text(unitInfo1, "A ");
         lv_label_set_text(labelInfo2, "Battery ESR ");
-        sprintf(stringData, "%d.%d ", informationLogger->globalBatteryESR / 10, informationLogger->globalBatteryESR % 10);
+        lv_snprintf(stringData, sizeof(stringData), "%d.%d ", informationLogger->globalBatteryESR / 10, informationLogger->globalBatteryESR % 10);
         lv_label_set_text(valueInfo2, stringData);
         lv_label_set_text(unitInfo2, "mΩ ");
         lv_label_set_text(labelInfo3, "Battery health ");
-        sprintf(stringData, "%d.%d ", informationLogger->globalBatteryHealth / 10, informationLogger->globalBatteryHealth % 10);
+        lv_snprintf(stringData, sizeof(stringData), "%d ", informationLogger->globalBatteryHealth);
         lv_label_set_text(valueInfo3, stringData);
         lv_label_set_text(unitInfo3, "% ");
         lv_obj_realign(unitInfo1);
@@ -126,15 +129,15 @@ void ui_UpdateInformation()
     {
         lv_label_set_text(labelInformation, "Device Information ");
         lv_label_set_text(labelInfo1, "Device firmware ");
-        sprintf(stringData, "%d.%d ", informationLogger->globalDeviceFirmware / 10, informationLogger->globalDeviceFirmware % 10);
+        lv_snprintf(stringData, sizeof(stringData), "%d.%d ", informationLogger->globalDeviceFirmware / 10, informationLogger->globalDeviceFirmware % 10);
         lv_label_set_text(valueInfo1, stringData);
         lv_label_set_text(unitInfo1, "Beta ");
         lv_label_set_text(labelInfo2, "Device up time ");
-        sprintf(stringData, "%d.%d ", informationLogger->globalDeviceUpTime / 3600, informationLogger->globalDeviceUpTime % 3600 / 360);
+        lv_snprintf(stringData, sizeof(stringData), "%d.%d ", informationLogger->globalDeviceUpTime / 3600, informationLogger->globalDeviceUpTime % 3600 / 360);
         lv_label_set_text(valueInfo2, stringData);
         lv_label_set_text(unitInfo2, "h ");
         lv_label_set_text(labelInfo3, "Device utilization ");
-        sprintf(stringData, "%d.%d ", informationLogger->globalDeviceUtilization / 10, informationLogger->globalDeviceUtilization % 10);
+        lv_snprintf(stringData, sizeof(stringData), "%d.%d ", informationLogger->globalDeviceUtilization / 10, informationLogger->globalDeviceUtilization % 10);
         lv_label_set_text(valueInfo3, stringData);
         lv_label_set_text(unitInfo3, "% ");
         lv_obj_realign(unitInfo1);
@@ -193,21 +196,35 @@ void ui_CornerClickEvent(lv_obj_t *obj, lv_event_t event)
 
 void ui_RollerEvent(lv_obj_t *obj, lv_event_t event)
 {
-    lv_obj_set_state(obj, LV_STATE_DEFAULT);
+    if (lv_disp_get_scr_act(NULL) == NULL)
+        return;
     if (event == LV_EVENT_VALUE_CHANGED)
     {
         if (obj == rollerCutOffLevel)
         {
+            inverterSetting->globalCutOffLevel = 5 * (int32_t)lv_roller_get_selected(obj) + 10;
         }
         else if (obj == rollerStartLevel)
         {
+            inverterSetting->globalStartLevel = 5 * (int32_t)lv_roller_get_selected(obj) + 10;
         }
         else if (obj == rollerExternalVoltage)
         {
+            inverterSetting->globalExternalVoltage = 20 * (int32_t)lv_roller_get_selected(obj) + 5000;
         }
         else if (obj == rollerTotalEnergy)
         {
+            inverterSetting->globalTotalEnergy = 2500000 * (int32_t)lv_roller_get_selected(obj) + 2500000;
         }
+        else if (obj == rollerPVMin)
+        {
+            inverterSetting->globalPVMin = 50 * (int32_t)lv_roller_get_selected(obj) + 0;
+        }
+        else if (obj == rollerExternalLevel)
+        {
+            inverterSetting->globalExternalLevel = 5 * (int32_t)lv_roller_get_selected(obj) + 10;
+        }
+        nvs_WriteInverterSetting(inverterSetting);
     }
 }
 
@@ -223,8 +240,8 @@ void ui_UpdateBatteryPercent(int32_t percent)
         percent = 0;
     lv_draw_mask_line_points_init(&battery_linemask, 0, 200 - percent * 2, 108, 200 - percent * 2, LV_DRAW_MASK_LINE_SIDE_BOTTOM);
     lv_objmask_update_mask(batteryMask, battery_objmask, &battery_linemask);
-    char txtPercent[10];
-    sprintf(txtPercent, "%02d ", percent);
+    static char txtPercent[10];
+    lv_snprintf(txtPercent, sizeof(txtPercent), "%02d ", percent);
     lv_label_set_text(batteryPercent, txtPercent);
     lv_label_set_text(batteryPercentShadow, txtPercent);
 }
@@ -243,14 +260,13 @@ void ui_UpdateBatteryVoltage(int32_t voltage)
     lv_draw_mask_line_points_init(&voltage_linemask, 0, 200 - percent * 2, 108, 200 - percent * 2, LV_DRAW_MASK_LINE_SIDE_BOTTOM);
     lv_objmask_update_mask(voltageMask, voltage_objmask, &voltage_linemask);
     char txtVoltage[25];
-    sprintf(txtVoltage, "%02d.%01d#94aeb4 V ", voltage / 10, voltage % 10);
+    lv_snprintf(txtVoltage, sizeof(txtVoltage), "%02d.%01d#94aeb4 V ", voltage / 10, voltage % 10);
     lv_label_set_text(batteryVoltage, txtVoltage);
 }
 
 void ui_HomeInit()
 {
     screen_Home = lv_obj_create(NULL, NULL);
-    logger_GetInformation(&informationLogger);
     ESP_LOGI(TAG, "Screen Home init!");
 
     lv_obj_t *backgroundImg = lv_img_create(screen_Home, NULL);
@@ -278,13 +294,13 @@ void ui_HomeInit()
     lv_obj_align(batteryImg, NULL, LV_ALIGN_CENTER, 0, 0);
 
     batteryPercentShadow = lv_label_create(screen_Home, NULL);
-    lv_label_set_text(batteryPercentShadow, "32 ");
+    lv_label_set_text(batteryPercentShadow, "00 ");
     lv_obj_set_style_local_text_color(batteryPercentShadow, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, lv_color_hex(0xD56920));
     lv_obj_set_style_local_text_font(batteryPercentShadow, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, &ui_font_percent);
     lv_obj_align(batteryPercentShadow, NULL, LV_ALIGN_CENTER, 15, 0);
 
     batteryPercent = lv_label_create(screen_Home, NULL);
-    lv_label_set_text(batteryPercent, "32 ");
+    lv_label_set_text(batteryPercent, "00 ");
     lv_obj_set_style_local_text_color(batteryPercent, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, lv_color_hex(0xFFE69C));
     lv_obj_set_style_local_text_font(batteryPercent, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, &ui_font_percent);
     lv_obj_align(batteryPercent, NULL, LV_ALIGN_CENTER, 10, 0);
@@ -571,25 +587,25 @@ void ui_SettingInit()
     lv_obj_set_style_local_text_font(iconLink, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, &ui_font_icon);
     lv_obj_align(iconLink, NULL, LV_ALIGN_IN_BOTTOM_MID, 20, -224);
 
-    rollerCutOffLevel = ui_RollerCreate(screen_Setting, ui_RollerEvent, 320 / 3, 95, NULL, LV_ALIGN_IN_TOP_LEFT, 0, 35, LV_BORDER_SIDE_NONE, " Cut-off level ", " 0.500 kWh \n 1.000 kWh \n 1.500 kWh \n 2.000 kWh \n 2.500 kWh \n 3.000 kWh \n 3.500 kWh \n 4.000 kWh \n 4.500 kWh \n 5.000 kWh \n 5.500 kWh \n 6.000 kWh");
-    rollerStartLevel = ui_RollerCreate(screen_Setting, ui_RollerEvent, 320 / 3, 95, NULL, LV_ALIGN_IN_TOP_MID, 0, 35, LV_BORDER_SIDE_LEFT | LV_BORDER_SIDE_RIGHT, " Start level ", " 0.500 kWh \n 1.000 kWh \n 1.500 kWh \n 2.000 kWh \n 2.500 kWh \n 3.000 kWh \n 3.500 kWh \n 4.000 kWh \n 4.500 kWh \n 5.000 kWh \n 5.500 kWh \n 6.000 kWh");
-    rollerExternalVoltage = ui_RollerCreate(screen_Setting, ui_RollerEvent, 320 / 3, 95, NULL, LV_ALIGN_IN_TOP_RIGHT, 0, 35, LV_BORDER_SIDE_NONE, " External voltage ", " 50.0 V \n 50.1 V \n 50.2 V \n 50.3 V \n 50.4 V \n 50.5 V \n 50.6 V \n 50.7 V \n 50.8 V \n 50.9 V \n 51.0 V \n Disable ");
+    rollerCutOffLevel = ui_RollerCreate(screen_Setting, ui_RollerEvent, 320 / 3, 95, NULL, LV_ALIGN_IN_TOP_LEFT, 0, 35, LV_BORDER_SIDE_NONE, " Cut-off level ", " 10 % \n 15 % \n 20 % \n 25 % \n 30 % \n 35 % \n 40 % \n 45 % \n 50 % ");
+    rollerStartLevel = ui_RollerCreate(screen_Setting, ui_RollerEvent, 320 / 3, 95, NULL, LV_ALIGN_IN_TOP_MID, 0, 35, LV_BORDER_SIDE_LEFT | LV_BORDER_SIDE_RIGHT, " Start level ", " 10 % \n 15 % \n 20 % \n 25 % \n 30 % \n 35 % \n 40 % \n 45 % \n 50 % ");
+    rollerExternalVoltage = ui_RollerCreate(screen_Setting, ui_RollerEvent, 320 / 3, 95, NULL, LV_ALIGN_IN_TOP_RIGHT, 0, 35, LV_BORDER_SIDE_NONE, " External voltage ", " 50.0 V \n 50.2 V \n 50.4 V \n 50.6 V \n 50.8 V \n 51.0 V \n 51.2 V \n 51.4 V \n 51.6 V \n 51.8 V \n 52.0 V ");
     rollerTotalEnergy = ui_RollerCreate(screen_Setting, ui_RollerEvent, 320 / 3, 95, NULL, LV_ALIGN_IN_TOP_LEFT, 0, 40 + 95, LV_BORDER_SIDE_NONE, " Total energy ", " 2.500 kWh \n 5.000 kWh \n 7.500 kWh \n 10.000 kWh \n 12.500 kWh \n 15.000 kWh \n 17.500 kWh \n 20.000 kWh ");
+    rollerPVMin = ui_RollerCreate(screen_Setting, ui_RollerEvent, 320 / 3, 95, NULL, LV_ALIGN_IN_TOP_MID, 0, 40 + 95, LV_BORDER_SIDE_LEFT | LV_BORDER_SIDE_RIGHT, " PV min ", " 0 W \n 50 W \n 100 W \n 150 W \n 200 W \n 250 W \n 300 W ");
+    rollerExternalLevel = ui_RollerCreate(screen_Setting, ui_RollerEvent, 320 / 3, 95, NULL, LV_ALIGN_IN_TOP_RIGHT, 0, 40 + 95, LV_BORDER_SIDE_NONE, " External level ", " 10 % \n 15 % \n 20 % \n 25 % \n 30 % \n 35 % \n 40 % ");
 
-    lv_obj_t *extInformation = lv_obj_create(screen_Setting, NULL);
-    lv_obj_set_size(extInformation, 320 * 2 / 3, 95);
-    lv_obj_align(extInformation, NULL, LV_ALIGN_IN_TOP_RIGHT, 0, 40 + 95);
-    lv_obj_set_style_local_bg_opa(extInformation, LV_OBJ_PART_MAIN, LV_STATE_DEFAULT, LV_OPA_TRANSP);
-    lv_obj_set_style_local_border_color(extInformation, LV_OBJ_PART_MAIN, LV_STATE_DEFAULT, lv_color_hex(0x293031));
-    lv_obj_set_style_local_border_color(extInformation, LV_OBJ_PART_MAIN, LV_STATE_FOCUSED, lv_color_hex(0x293031));
-    lv_obj_set_style_local_border_opa(extInformation, LV_OBJ_PART_MAIN, LV_STATE_DEFAULT, LV_OPA_COVER);
-    lv_obj_set_style_local_border_width(extInformation, LV_OBJ_PART_MAIN, LV_STATE_DEFAULT, 1);
-    lv_obj_set_style_local_border_side(extInformation, LV_OBJ_PART_MAIN, LV_STATE_DEFAULT, LV_BORDER_SIDE_LEFT);
-    lv_obj_set_style_local_radius(extInformation, LV_OBJ_PART_MAIN, LV_STATE_DEFAULT, 0);
+    lv_roller_set_selected(rollerCutOffLevel, (inverterSetting->globalCutOffLevel - 10) / 5, LV_ANIM_OFF);
+    lv_roller_set_selected(rollerStartLevel, (inverterSetting->globalStartLevel - 10) / 5, LV_ANIM_OFF);
+    lv_roller_set_selected(rollerExternalVoltage, (inverterSetting->globalExternalVoltage - 5000) / 20, LV_ANIM_OFF);
+    lv_roller_set_selected(rollerTotalEnergy, (inverterSetting->globalTotalEnergy - 2500000) / 2500000, LV_ANIM_OFF);
+    lv_roller_set_selected(rollerPVMin, (inverterSetting->globalPVMin - 0) / 50, LV_ANIM_OFF);
+    lv_roller_set_selected(rollerExternalLevel, (inverterSetting->globalExternalLevel - 10) / 5, LV_ANIM_OFF);
 }
 
 void ui_Init()
 {
+    logger_GetInformation(&informationLogger);
+    logger_GetInverterSetting(&inverterSetting);
     ui_HomeInit();
     ui_SettingInit();
     lv_disp_load_scr(screen_Home);

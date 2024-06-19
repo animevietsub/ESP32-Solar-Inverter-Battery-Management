@@ -26,8 +26,14 @@
 #include <lvgl_helpers.h>
 
 #include <sdkconfig.h>
+#include <math.h>
+
+#include <relay.h>
 
 #define SAMPLE_RATE_ESR 10
+
+#define LINE_MODE 0
+#define INVERTER_MODE 1
 
 typedef struct _information_logger_t
 {
@@ -53,6 +59,8 @@ typedef struct _inverter_logger_t
     int32_t globalOutputPower;
     int32_t globalGridVoltage;
     int32_t globalTemperature;
+    int32_t globalCurrentMode;
+    int32_t globalSetMode;
 } inverter_logger_t;
 
 typedef struct _inverter_setting_t
@@ -76,5 +84,7 @@ void logger_InitUART();
 char *logger_InverterString(char *data);
 uint16_t logger_InverterCRCUpdate(uint16_t crc, uint8_t data);
 uint16_t logger_InverterCRC(char *data, int len);
+uint16_t ModRTU_CRC(uint8_t *buf, int len);
+int32_t logger_EstimateBatteryPercent(int32_t voltage);
 
 #endif

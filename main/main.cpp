@@ -15,24 +15,17 @@ static const char *TAG = "[MAIN]";
 
 void testTask(void *pvParameter)
 {
-    logger_GetInverterInformation(&_inverterLogger);
-    logger_GetInformation(&_informationLogger);
+    while (_inverterLogger->globalBatteryVoltage == 0)
+    {
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+    _informationLogger->globalEnergyLeft = _inverterSetting->globalTotalEnergy * logger_EstimateBatteryPercent((_inverterLogger->globalBatteryVoltage - (_informationLogger->globalBatteryCurrent * _informationLogger->globalBatteryESR / 100l))) / 100;
     while (1)
     {
         ui_UpdateBatteryPercent(_informationLogger->globalPercent);
         ui_UpdateBatteryVoltage(_inverterLogger->globalBatteryVoltage / 10);
         ui_UpdateInformation();
         ui_UpdateTime();
-        if (_inverterLogger->globalBatteryVoltage <= 5120 && _informationLogger->globalBatteryCurrent == 0)
-        {
-            if (_informationLogger->globalEnergyLeft < 1000000)
-                _informationLogger->globalEnergyLeft = 1000000;
-            relay_On();
-        }
-        else
-        {
-            relay_Off();
-        }
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
@@ -121,14 +114,15 @@ extern "C" void app_main()
     relay_Init();
     gamo_wifi_init_sta();
     logger_GetInverterSetting(&_inverterSetting);
-    ESP_LOG_BUFFER_HEXDUMP(TAG, _inverterSetting, sizeof(inverter_setting_t), ESP_LOG_INFO);
+    logger_GetInverterInformation(&_inverterLogger);
+    logger_GetInformation(&_informationLogger);
     nvs_ReadInverterSetting(_inverterSetting);
-    ESP_LOG_BUFFER_HEXDUMP(TAG, _inverterSetting, sizeof(inverter_setting_t), ESP_LOG_INFO);
-    // mqtt_Init();
-    // gamo_wifi_connect("TheKey_0", "23456789", mqtt_Start);
-    // printf("\r\nAPP %s is start!~\r\n", TAG);
-    // vTaskDelay(1000 / portTICK_PERIOD_MS);
-    // xTaskCreatePinnedToCore(guiTask, "[guiTask]", 4096 * 2, NULL, 0, NULL, 1);
-    // xTaskCreate(testTask, "[testTask]", 4096, NULL, 0, NULL);
-    // xTaskCreate(mqttTask, "[mqttTask]", 4096, NULL, 0, NULL);
+    mqtt_Init(_inverterSetting->globalToken);
+    gamo_wifi_connect(_inverterSetting->globalSSID, _inverterSetting->globalPassword, mqtt_Start);
+
+    printf("\r\nAPP %s is start!~\r\n", TAG);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
+    xTaskCreatePinnedToCore(guiTask, "[guiTask]", 4096 * 3, NULL, 0, NULL, 1);
+    xTaskCreatePinnedToCore(testTask, "[testTask]", 4096, NULL, 0, NULL, 1);
+    xTaskCreatePinnedToCore(mqttTask, "[mqttTask]", 4096, NULL, 0, NULL, 0);
 }

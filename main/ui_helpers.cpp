@@ -135,5 +135,5 @@ lv_obj_t *ui_RollerCreate(lv_obj_t *parent, lv_event_cb_t event_cb, lv_coord_t w
     lv_obj_align(roller, label, LV_ALIGN_OUT_BOTTOM_MID, 0, 8);
     lv_obj_set_event_cb(roller, event_cb);
     
-    return ui_Roller;
+    return roller;
 }
