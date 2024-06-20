@@ -65,6 +65,7 @@ static void logger_UpdateInformation(void *pvParameter)
     static int32_t oldVoltage = 0;
     static int32_t oldCurrent = 0;
     static int8_t relayStatus = false;
+    static int8_t startMeasureHealth = false;
 
     informationLogger.globalDeviceUtilization = (100 - lv_task_get_idle()) * 10;
     informationLogger.globalBatteryCurrent = (inverterLogger.globalBatteryIC - inverterLogger.globalBatteryIDC);
@@ -98,7 +99,7 @@ static void logger_UpdateInformation(void *pvParameter)
     {
         informationLogger.globalRemainingTime = (inverterSetting.globalTotalEnergy - informationLogger.globalEnergyLeft) / engeryExchange;
     }
-    if (inverterLogger.globalBatteryVoltage >= 5680 && informationLogger.globalBatteryCurrent == 0)
+    if (inverterLogger.globalBatteryVoltage >= 5680 && informationLogger.globalBatteryCurrent == 0 && startMeasureHealth)
     {
         informationLogger.globalBatteryHealth = 100 - ((inverterSetting.globalTotalEnergy - informationLogger.globalEnergyLeft) * 100 / inverterSetting.globalTotalEnergy);
         if (informationLogger.globalBatteryHealth > 100)
@@ -106,6 +107,7 @@ static void logger_UpdateInformation(void *pvParameter)
         else if (informationLogger.globalBatteryHealth < 0)
             informationLogger.globalBatteryHealth = 0;
         informationLogger.globalEnergyLeft = inverterSetting.globalTotalEnergy;
+        startMeasureHealth = false;
     }
     if (inverterLogger.globalBatteryVoltage == 5120 && informationLogger.globalBatteryCurrent == 0)
     {
@@ -135,7 +137,8 @@ static void logger_UpdateInformation(void *pvParameter)
         if (!relayStatus)
         {
             relay_On();
-            relayStatus = true; 
+            relayStatus = true;
+            startMeasureHealth = true;
         }
     }
     else if (relayStatus && inverterLogger.globalBatteryVoltage > inverterSetting.globalExternalVoltage)
@@ -206,6 +209,9 @@ void logger_Task(void *pvParameter)
     memset(STOP_INVERTER, 0, 256);
     memcpy(STOP_INVERTER, logger_InverterString("POP01"), strlen(logger_InverterString("POP01")) + 1);
 
+    ESP_LOG_BUFFER_HEX(TAG, START_INVERTER, strlen(START_INVERTER));
+    ESP_LOG_BUFFER_HEX(TAG, STOP_INVERTER, strlen(STOP_INVERTER));
+
     vTaskDelay(pdMS_TO_TICKS(15000));
 
     while (1)
@@ -216,13 +222,10 @@ void logger_Task(void *pvParameter)
             loggerSkip = false;
         }
         xSemaphoreTake(loggerSemaphore, portMAX_DELAY);
-        uart_wait_tx_idle_polling(UART_NUM_1);
-        if (loggerSkip)
+        if (logger_SendCommandWithSkip(QPIGS) == ESP_FAIL)
         {
-            xSemaphoreGive(loggerSemaphore);
             continue;
         }
-        uart_write_bytes(UART_NUM_1, QPIGS, strlen(QPIGS));
         if ((informationLogger.globalPercent > inverterSetting.globalStartLevel) && (inverterLogger.globalPVPower >= inverterSetting.globalPVMin) && inverterLogger.globalCurrentMode == LINE_MODE)
         {
             inverterLogger.globalSetMode = INVERTER_MODE;
@@ -245,7 +248,7 @@ void logger_Task(void *pvParameter)
         }
         uart_wait_tx_idle_polling(UART_NUM_1);
         xSemaphoreGive(loggerSemaphore);
-        vTaskDelay(pdMS_TO_TICKS(2500));
+        vTaskDelay(pdMS_TO_TICKS(2000));
     }
 }
 
@@ -376,6 +379,13 @@ uint16_t logger_InverterCRC(char *data, int len)
     {
         x = logger_InverterCRCUpdate(x, (uint16_t)*data++);
     }
+    uint8_t crc_low = x & 0x00ff;
+    uint8_t crc_high = x >> 8;
+    if (crc_low == 0x28 || crc_low == 0x0d || crc_low == 0x0a)
+        crc_low++;
+    if (crc_high == 0x28 || crc_high == 0x0d || crc_high == 0x0a)
+        crc_high++;
+    x = (crc_high << 8) | crc_low;
     return (x);
 }
 
