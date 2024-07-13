@@ -35,6 +35,9 @@
 #define LINE_MODE 0
 #define INVERTER_MODE 1
 
+#define IDLE_STATE 0
+#define CHARGE_STATE 1
+
 typedef struct _information_logger_t
 {
     int32_t globalPercent;
@@ -60,7 +63,9 @@ typedef struct _inverter_logger_t
     int32_t globalGridVoltage;
     int32_t globalTemperature;
     int32_t globalCurrentMode;
+    int32_t globalChargeMode;
     int32_t globalSetMode;
+    int32_t globalSetCharge;
 } inverter_logger_t;
 
 typedef struct _inverter_setting_t

@@ -119,7 +119,6 @@ extern "C" void app_main()
     nvs_ReadInverterSetting(_inverterSetting);
     mqtt_Init(_inverterSetting->globalToken);
     gamo_wifi_connect(_inverterSetting->globalSSID, _inverterSetting->globalPassword, mqtt_Start);
-
     printf("\r\nAPP %s is start!~\r\n", TAG);
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     xTaskCreatePinnedToCore(guiTask, "[guiTask]", 4096 * 3, NULL, 0, NULL, 1);

@@ -28,7 +28,9 @@ static inverter_logger_t inverterLogger = {
     .globalGridVoltage = 0,
     .globalTemperature = 0,
     .globalCurrentMode = LINE_MODE,
+    .globalChargeMode = CHARGE_STATE,
     .globalSetMode = LINE_MODE,
+    .globalSetCharge = CHARGE_STATE,
 };
 
 static inverter_setting_t inverterSetting = {
@@ -69,26 +71,30 @@ static void logger_UpdateInformation(void *pvParameter)
 
     informationLogger.globalDeviceUtilization = (100 - lv_task_get_idle()) * 10;
     informationLogger.globalBatteryCurrent = (inverterLogger.globalBatteryIC - inverterLogger.globalBatteryIDC);
-    // if (informationLogger.globalBatteryCurrent > 200 || informationLogger.globalBatteryCurrent < -200)
+    // if ((inverterLogger.globalPVPower <= 50) && informationLogger.globalBatteryCurrent <= 0)
     // {
-    //     return;
+    //     extraCurrent = -1l;
     // }
-    // if (inverterLogger.globalBatteryVoltage > 5800 || inverterLogger.globalBatteryVoltage < 0)
+    // else
     // {
-    //     return;
+    //     extraCurrent = 0l;
     // }
-    if ((inverterLogger.globalPVPower <= 50) && informationLogger.globalBatteryCurrent <= 0)
+    // engeryExchange = (inverterLogger.globalBatteryVoltage - (informationLogger.globalBatteryCurrent * informationLogger.globalBatteryESR / 100l));
+    // engeryExchange *= (informationLogger.globalBatteryCurrent + extraCurrent);
+    // engeryExchange /= 360l;
+    if (inverterLogger.globalCurrentMode == LINE_MODE)
     {
-        extraCurrent = -1l;
+        engeryExchange = (inverterLogger.globalPVPower - 55) * 100; // Add P_chg_ac
+        engeryExchange /= 360l;
     }
-    else
+    else if (inverterLogger.globalCurrentMode == INVERTER_MODE)
     {
-        extraCurrent = 0l;
+        engeryExchange = (inverterLogger.globalPVPower - 55 - inverterLogger.globalOutputPower * 107 / 100) * 100;
+        engeryExchange /= 360l;
     }
-    engeryExchange = (inverterLogger.globalBatteryVoltage - (informationLogger.globalBatteryCurrent * informationLogger.globalBatteryESR / 100l));
-    engeryExchange *= (informationLogger.globalBatteryCurrent + extraCurrent);
-    engeryExchange /= 360l;
     informationLogger.globalEnergyLeft += engeryExchange;
+    if (informationLogger.globalEnergyLeft > inverterSetting.globalTotalEnergy)
+        informationLogger.globalEnergyLeft = inverterSetting.globalTotalEnergy;
     informationLogger.globalTotalCharged += (inverterLogger.globalPVPower * 5) / 18;
     informationLogger.globalDeviceUpTime += 1;
     if (engeryExchange < 0)
@@ -99,21 +105,14 @@ static void logger_UpdateInformation(void *pvParameter)
     {
         informationLogger.globalRemainingTime = (inverterSetting.globalTotalEnergy - informationLogger.globalEnergyLeft) / engeryExchange;
     }
-    if (inverterLogger.globalBatteryVoltage >= 5680 && informationLogger.globalBatteryCurrent == 0 && startMeasureHealth)
+    if (inverterLogger.globalBatteryVoltage >= 5760 && informationLogger.globalBatteryCurrent == 0 && startMeasureHealth)
     {
         informationLogger.globalBatteryHealth = 100 - ((inverterSetting.globalTotalEnergy - informationLogger.globalEnergyLeft) * 100 / inverterSetting.globalTotalEnergy);
         if (informationLogger.globalBatteryHealth > 100)
             informationLogger.globalBatteryHealth = 100;
         else if (informationLogger.globalBatteryHealth < 0)
             informationLogger.globalBatteryHealth = 0;
-        informationLogger.globalEnergyLeft = inverterSetting.globalTotalEnergy;
         startMeasureHealth = false;
-    }
-    if (inverterLogger.globalBatteryVoltage == 5120 && informationLogger.globalBatteryCurrent == 0)
-    {
-        int32_t checkEnergy = (20 * inverterSetting.globalTotalEnergy / 100);
-        if (informationLogger.globalEnergyLeft < checkEnergy)
-            informationLogger.globalEnergyLeft = checkEnergy;
     }
     informationLogger.globalPercent = informationLogger.globalEnergyLeft * 100 / inverterSetting.globalTotalEnergy;
     if ((informationLogger.globalRealTime / 3600) % 24 == 0 && (informationLogger.globalRealTime / 60) % 60 == 0)
@@ -130,21 +129,25 @@ static void logger_UpdateInformation(void *pvParameter)
     oldVoltage = inverterLogger.globalBatteryVoltage;
     oldCurrent = informationLogger.globalBatteryCurrent;
 
-    if (inverterLogger.globalBatteryVoltage < inverterSetting.globalExternalVoltage && informationLogger.globalBatteryCurrent == 0)
+    if (inverterLogger.globalBatteryVoltage <= inverterSetting.globalExternalVoltage && informationLogger.globalBatteryCurrent == 0)
     {
         if (informationLogger.globalEnergyLeft < (inverterSetting.globalExternalLevel * inverterSetting.globalTotalEnergy / 100))
             informationLogger.globalEnergyLeft = (inverterSetting.globalExternalLevel * inverterSetting.globalTotalEnergy / 100);
-        if (!relayStatus)
+        if (!relayStatus && inverterLogger.globalCurrentMode == LINE_MODE)
         {
-            relay_On();
+            // relay_On();
             relayStatus = true;
             startMeasureHealth = true;
         }
     }
-    else if (relayStatus && inverterLogger.globalBatteryVoltage > inverterSetting.globalExternalVoltage)
+    else if (relayStatus && (inverterLogger.globalBatteryVoltage > inverterSetting.globalExternalVoltage || inverterLogger.globalCurrentMode == INVERTER_MODE))
     {
-        relay_Off();
+        // relay_Off();
         relayStatus = false;
+    }
+    if (inverterLogger.globalGridVoltage > 90 && inverterLogger.globalBatteryIDC > 0)
+    {
+        inverterLogger.globalCurrentMode = INVERTER_MODE;
     }
     informationLogger.globalRealTime++;
 }
@@ -209,10 +212,30 @@ void logger_Task(void *pvParameter)
     memset(STOP_INVERTER, 0, 256);
     memcpy(STOP_INVERTER, logger_InverterString("POP01"), strlen(logger_InverterString("POP01")) + 1);
 
-    ESP_LOG_BUFFER_HEX(TAG, START_INVERTER, strlen(START_INVERTER));
-    ESP_LOG_BUFFER_HEX(TAG, STOP_INVERTER, strlen(STOP_INVERTER));
+    char *CHARGE_STATE_CMD = (char *)malloc(256);
+    memset(CHARGE_STATE_CMD, 0, 256);
+    memcpy(CHARGE_STATE_CMD, logger_InverterString("PBFT57.6"), strlen(logger_InverterString("PBFT57.6")) + 1);
+
+    char *IDLE_STATE_CMD = (char *)malloc(256);
+    memset(IDLE_STATE_CMD, 0, 256);
+    memcpy(IDLE_STATE_CMD, logger_InverterString("PBFT51.2"), strlen(logger_InverterString("PBFT51.2")) + 1);
 
     vTaskDelay(pdMS_TO_TICKS(15000));
+
+    {
+        inverterLogger.globalCurrentMode = LINE_MODE;
+        if (logger_SendCommandWithSkip(STOP_INVERTER) == ESP_FAIL)
+        {
+            vTaskDelay(pdMS_TO_TICKS(1000));
+            inverterLogger.globalCurrentMode = INVERTER_MODE;
+        }
+        inverterLogger.globalChargeMode = CHARGE_STATE;
+        if (logger_SendCommandWithSkip(CHARGE_STATE_CMD) == ESP_FAIL)
+        {
+            vTaskDelay(pdMS_TO_TICKS(1000));
+            inverterLogger.globalChargeMode = IDLE_STATE;
+        }
+    }
 
     while (1)
     {
@@ -236,13 +259,33 @@ void logger_Task(void *pvParameter)
                 continue;
             }
         }
-        else if ((informationLogger.globalPercent <= inverterSetting.globalCutOffLevel || (inverterLogger.globalBatteryIDC > 30 && informationLogger.globalPercent < 30)) && inverterLogger.globalCurrentMode == INVERTER_MODE)
+        else if ((informationLogger.globalPercent <= inverterSetting.globalCutOffLevel || (inverterLogger.globalBatteryIDC > 50 && informationLogger.globalPercent < 30)) && inverterLogger.globalCurrentMode == INVERTER_MODE)
         {
             inverterLogger.globalSetMode = LINE_MODE;
             if (logger_SendCommandWithSkip(STOP_INVERTER) == ESP_FAIL)
             {
                 vTaskDelay(pdMS_TO_TICKS(1000));
                 inverterLogger.globalCurrentMode = INVERTER_MODE;
+                continue;
+            }
+        }
+        else if (inverterLogger.globalChargeMode == IDLE_STATE && inverterLogger.globalPVPower > 100)
+        {
+            inverterLogger.globalSetCharge = CHARGE_STATE;
+            if (logger_SendCommandWithSkip(CHARGE_STATE_CMD) == ESP_FAIL)
+            {
+                vTaskDelay(pdMS_TO_TICKS(1000));
+                inverterLogger.globalChargeMode = IDLE_STATE;
+                continue;
+            }
+        }
+        else if (inverterLogger.globalChargeMode == CHARGE_STATE && inverterLogger.globalPVPower == 0)
+        {
+            inverterLogger.globalSetCharge = IDLE_STATE;
+            if (logger_SendCommandWithSkip(IDLE_STATE_CMD) == ESP_FAIL)
+            {
+                vTaskDelay(pdMS_TO_TICKS(1000));
+                inverterLogger.globalChargeMode = CHARGE_STATE;
                 continue;
             }
         }
@@ -305,6 +348,11 @@ void response_Task(void *pvParameter)
                     inverterLogger.globalCurrentMode = LINE_MODE;
                 else if (inverterLogger.globalSetMode == INVERTER_MODE)
                     inverterLogger.globalCurrentMode = INVERTER_MODE;
+
+                if (inverterLogger.globalSetCharge == IDLE_STATE)
+                    inverterLogger.globalChargeMode = IDLE_STATE;
+                else if (inverterLogger.globalSetCharge == CHARGE_STATE)
+                    inverterLogger.globalChargeMode = CHARGE_STATE;
                 continue;
             }
             else if (responseData[0] == 0x05 && responseData[1] == 0x03 && len == 95)
